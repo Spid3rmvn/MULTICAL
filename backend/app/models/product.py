@@ -34,7 +34,7 @@ class Product(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Product specifications (JSON field for flexible attributes)
-    specifications = db.Column(db.JSON)  # e.g., {"material": "Canvas", "finish": "Matte"}
+    specifications = db.Column(db.JSON)
 
     # SEO fields
     meta_title = db.Column(db.String(200))
