@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
     """Base Configuration class"""
     SECRET_KEY = os.getenv('SECRET_KEY') or 'multical-default-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY') or 'multical-jwt-default-key'
     JWT_ACCESS_TOKEN_EXPIRES = False

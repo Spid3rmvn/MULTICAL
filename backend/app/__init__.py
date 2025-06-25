@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
 import redis
+from .config import config
 
 # Initialize extensions
 db = SQLAlchemy()
