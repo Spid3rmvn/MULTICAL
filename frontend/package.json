@@ -4,45 +4,15 @@
   "description": "MULTICAL - Offline Desktop Application",
   "main": "main/index.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build:linux": "electron-builder --linux",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac"
+    "start": "electron . --no-sandbox",
+    "dev": "electron . --dev --no-sandbox",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "build": {
-    "appId": "com.multical.app",
-    "productName": "MULTICAL",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "main/**/*",
-      "renderer/**/*",
-      "shared/**/*"
-    ],
-    "linux": {
-      "target": ["AppImage", "deb"],
-      "category": "Utility"
-    },
-    "win": {
-      "target": ["nsis", "portable"]
-    },
-    "mac": {
-      "target": ["dmg"]
-    }
-  },
-  "keywords": [
-    "electron",
-    "desktop",
-    "multical"
-  ],
+  "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "ISC",
+  "type": "commonjs",
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
-  },
-  "dependencies": {}
+    "electron": "^39.2.6"
+  }
 }

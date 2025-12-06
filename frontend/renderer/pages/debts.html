@@ -1,0 +1,98 @@
+<!-- Debts Page Content -->
+<div id="page-debts" class="page-content animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Debts Management</h1>
+        <button id="btn-add-debt"
+            class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Add Debt
+        </button>
+    </div>
+
+    <!-- Debt Summary Cards -->
+    <div class="grid grid-cols-3 gap-6 mb-6">
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium mb-1">Total Outstanding</p>
+            <p class="text-2xl font-bold text-red-600" id="total-debt">KSh 0.00</p>
+        </div>
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium mb-1">Paid This Month</p>
+            <p class="text-2xl font-bold text-green-600" id="paid-month">KSh 0.00</p>
+        </div>
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium mb-1">Overdue Debts</p>
+            <p class="text-2xl font-bold text-gray-900" id="overdue-count">0</p>
+        </div>
+    </div>
+
+    <!-- Debts Table -->
+    <div class="dashboard-panel overflow-hidden">
+        <table class="w-full data-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="debts-table-body">
+                <tr>
+                    <td colspan="6" class="px-5 py-8 text-center text-gray-500">No debts recorded.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Debt Modal -->
+    <div id="modal-add-debt" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Debt</h3>
+                <button class="modal-close-btn" id="btn-close-debt-modal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <form id="add-debt-form">
+                <div class="modal-body">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                            <input type="text" name="customer_name" required class="w-full"
+                                placeholder="Enter customer name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                            <input type="tel" name="phone" class="w-full" placeholder="Optional">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Amount Owed</label>
+                            <input type="number" name="amount" required step="0.01" class="w-full" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                            <input type="date" name="due_date" class="w-full">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea name="description" rows="2" class="w-full"
+                                placeholder="What was purchased?"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
+                        id="btn-cancel-debt">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg shadow-sm">Save Debt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

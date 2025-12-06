@@ -1,94 +1,56 @@
 /**
- * Main Application Entry Point
+ * MULTICAL Main Application
+ * Handles navigation and page loading
  */
 
-// DOM Elements
-const appVersion = document.getElementById('app-version');
-const appPlatform = document.getElementById('app-platform');
-const backendStatus = document.getElementById('backend-status');
-const navLinks = document.querySelectorAll('.nav-link');
-const pages = document.querySelectorAll('.page');
-const settingsForm = document.getElementById('settings-form');
+// Current page name
+let currentPage = 'dashboard';
+
+// Page controllers map
+const pageControllers = {
+  dashboard: 'DashboardPage',
+  products: 'ProductsPage',
+  stock: 'StockPage',
+  sales: 'SalesPage',
+  debts: 'DebtsPage'
+};
 
 /**
  * Initialize the application
  */
-async function init() {
-  // Load app info
-  await loadAppInfo();
-  
-  // Check backend health
-  await checkBackendHealth();
-  
-  // Setup navigation
+function init() {
   setupNavigation();
-  
-  // Setup forms
-  setupForms();
-  
-  // Listen for menu events
-  setupMenuListeners();
-  
+  loadPage('dashboard');
   console.log('MULTICAL initialized');
 }
 
 /**
- * Load application information
- */
-async function loadAppInfo() {
-  try {
-    if (window.electronAPI) {
-      const version = await window.electronAPI.getAppVersion();
-      const platform = window.electronAPI.getPlatform();
-      
-      appVersion.textContent = version || '1.0.0';
-      appPlatform.textContent = formatPlatform(platform);
-    } else {
-      appVersion.textContent = '1.0.0 (Web)';
-      appPlatform.textContent = navigator.platform;
-    }
-  } catch (error) {
-    console.error('Failed to load app info:', error);
-    appVersion.textContent = 'Unknown';
-    appPlatform.textContent = 'Unknown';
-  }
-}
-
-/**
- * Check backend health status
- */
-async function checkBackendHealth() {
-  try {
-    const result = await window.electronAPI.checkBackendHealth();
-    
-    if (result.status === 'healthy') {
-      updateBackendStatus('healthy', 'Connected');
-    } else {
-      updateBackendStatus('error', 'Disconnected');
-    }
-  } catch (error) {
-    console.error('Backend health check failed:', error);
-    updateBackendStatus('error', 'Disconnected');
-  }
-}
-
-/**
- * Update backend status indicator
- */
-function updateBackendStatus(status, text) {
-  backendStatus.className = `status-indicator status--${status}`;
-  backendStatus.textContent = text;
-}
-
-/**
- * Setup page navigation
+ * Setup sidebar navigation
  */
 function setupNavigation() {
-  navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+  // Handle sidebar navigation
+  const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
+  
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
       e.preventDefault();
-      const targetPage = link.dataset.page;
-      navigateToPage(targetPage);
+      const pageName = item.dataset.page;
+      if (pageName) {
+        navigateToPage(pageName);
+      }
+    });
+  });
+
+  // Handle header tab navigation
+  const headerTabs = document.querySelectorAll('.header-tab');
+  
+  headerTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageName = tab.dataset.page;
+      if (pageName) {
+        navigateToPage(pageName);
+      }
     });
   });
 }
@@ -97,86 +59,67 @@ function setupNavigation() {
  * Navigate to a specific page
  */
 function navigateToPage(pageName) {
-  // Update nav links
-  navLinks.forEach(link => {
-    link.classList.toggle('active', link.dataset.page === pageName);
+  // Update active sidebar nav item
+  const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
+  navItems.forEach(item => {
+    item.classList.toggle('active', item.dataset.page === pageName);
   });
   
-  // Update pages
-  pages.forEach(page => {
-    page.classList.toggle('active', page.id === `page-${pageName}`);
+  // Update active header tab
+  const headerTabs = document.querySelectorAll('.header-tab');
+  headerTabs.forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.page === pageName);
   });
+  
+  // Load the page
+  loadPage(pageName);
 }
 
 /**
- * Setup form handlers
+ * Load a page dynamically
  */
-function setupForms() {
-  if (settingsForm) {
-    settingsForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveSettings();
-    });
+async function loadPage(pageName) {
+  currentPage = pageName;
+  const container = document.getElementById('page-container');
+  
+  if (!container) {
+    console.error('Page container not found');
+    return;
   }
-}
 
-/**
- * Save settings
- */
-function saveSettings() {
-  const formData = new FormData(settingsForm);
-  const settings = Object.fromEntries(formData.entries());
-  
-  // Save to localStorage (or send to backend)
-  localStorage.setItem('multical-settings', JSON.stringify(settings));
-  
-  // Apply settings
-  applySettings(settings);
-  
-  console.log('Settings saved:', settings);
-}
-
-/**
- * Apply settings
- */
-function applySettings(settings) {
-  // Apply theme (example)
-  if (settings.theme === 'light') {
-    document.body.classList.add('light-theme');
-  } else {
-    document.body.classList.remove('light-theme');
-  }
-}
-
-/**
- * Setup menu event listeners
- */
-function setupMenuListeners() {
-  if (window.electronAPI) {
-    window.electronAPI.receive('menu:settings', () => {
-      navigateToPage('settings');
-    });
+  try {
+    // Fetch the page HTML
+    const response = await fetch(`pages/${pageName}.html`);
+    if (!response.ok) {
+      throw new Error(`Failed to load page: ${pageName}`);
+    }
     
-    window.electronAPI.receive('menu:about', () => {
-      alert('MULTICAL v1.0.0\nAn offline desktop application.');
-    });
+    const html = await response.text();
+    container.innerHTML = html;
+    
+    // Initialize the page controller if it exists
+    const controllerName = pageControllers[pageName];
+    if (controllerName && window[controllerName]) {
+      window[controllerName].init();
+    }
+    
+    console.log('Loaded page:', pageName);
+  } catch (error) {
+    console.error('Error loading page:', error);
+    container.innerHTML = `
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center">
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">Page Not Found</h2>
+          <p class="text-gray-500">The page "${pageName}" could not be loaded.</p>
+          <p class="text-red-500 text-xs mt-2">${error.message}</p>
+        </div>
+      </div>
+    `;
   }
 }
 
-/**
- * Format platform name
- */
-function formatPlatform(platform) {
-  const platforms = {
-    'darwin': 'macOS',
-    'win32': 'Windows',
-    'linux': 'Linux'
-  };
-  return platforms[platform] || platform;
-}
-
-// Periodic health check
-setInterval(checkBackendHealth, 30000); // Every 30 seconds
+// Make navigateToPage globally available for inline onclick handlers
+window.navigateToPage = navigateToPage;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', init);
