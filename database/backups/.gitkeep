@@ -1,0 +1,5 @@
+# Database Backups
+
+This directory stores SQLite database backups.
+
+Backup naming convention: `multical_YYYY-MM-DD_HH-MM-SS.db`

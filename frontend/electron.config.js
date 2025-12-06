@@ -1,0 +1,42 @@
+/**
+ * Electron Configuration
+ */
+module.exports = {
+  // Window configuration
+  window: {
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    title: 'MULTICAL',
+    // Window behavior
+    show: false, // Show when ready
+    center: true,
+    // Frame options
+    frame: true,
+    titleBarStyle: 'default',
+    // Background color (shown while loading)
+    backgroundColor: '#1a1a2e'
+  },
+
+  // Web preferences for renderer
+  webPreferences: {
+    nodeIntegration: false,
+    contextIsolation: true,
+    sandbox: true,
+    webSecurity: true
+  },
+
+  // Backend configuration
+  backend: {
+    host: 'localhost',
+    port: 8000,
+    protocol: 'http'
+  },
+
+  // Development options
+  development: {
+    openDevTools: true,
+    devToolsPosition: 'right'
+  }
+};
