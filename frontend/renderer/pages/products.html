@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Products</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage your product inventory and pricing</p>
+            <p class="text-sm text-gray-500 mt-1">Manage Life Savers and Chevrons inventory</p>
         </div>
         <button id="btn-add-product"
             class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm transition-all shadow-sm">
@@ -14,14 +14,34 @@
         </button>
     </div>
 
+    <!-- Products Summary Cards -->
+    <div id="products-summary" class="grid grid-cols-4 gap-6 mb-6">
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium pb-1">Total Products</p>
+            <p id="summary-total-products" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+        </div>
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium pb-1">Life Savers</p>
+            <p id="summary-life-savers" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+        </div>
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium pb-1">Chevrons</p>
+            <p id="summary-chevrons" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+        </div>
+        <div class="stat-card-modern">
+            <p class="text-sm text-gray-500 font-medium pb-1">Total Stock Value</p>
+            <p id="summary-stock-value" class="text-2xl font-bold text-gray-900 mt-1">KSh 0</p>
+        </div>
+    </div>
+
     <!-- Products Table -->
     <div class="dashboard-panel overflow-hidden">
         <table class="w-full data-table">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Category</th>
-                    <th>Buying Price</th>
+                    <th>Type</th>
+                    <th>Color</th>
+                    <th>Size</th>
                     <th>Selling Price</th>
                     <th>Stock</th>
                     <th>Actions</th>
@@ -61,38 +81,93 @@
             </div>
             <form id="add-product-form">
                 <div class="modal-body">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                            <input type="text" name="name" required class="w-full" placeholder="Enter product name">
-                        </div>
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Product Type Selection -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                            <select name="category" class="w-full">
-                                <option value="">Select category</option>
-                                <option value="clothing">Clothing</option>
-                                <option value="electronics">Electronics</option>
-                                <option value="food">Food & Beverages</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
+                            <div id="product-type-selector" class="flex gap-3">
+                                <button type="button" data-type="life_saver"
+                                    class="product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-green-500 bg-green-50 text-green-800 font-medium text-sm transition-all hover:bg-green-100">
+                                    <span class="block font-semibold">Life Saver</span>
+                                    <span class="block text-xs mt-0.5 opacity-75">Sold in packs of 10</span>
+                                </button>
+                                <button type="button" data-type="chevron"
+                                    class="product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300">
+                                    <span class="block font-semibold">Chevron</span>
+                                    <span class="block text-xs mt-0.5 opacity-75">Sold in pairs</span>
+                                </button>
+                            </div>
+                            <input type="hidden" name="product_type" id="product-type-input" value="life_saver">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                            <input type="number" name="stock" required class="w-full" placeholder="0">
+
+                        <!-- Color Selection (Chevrons only) -->
+                        <div id="color-section" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                            <div id="product-color-selector" class="flex gap-3">
+                                <button type="button" data-color="white_red"
+                                    class="product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-900 bg-gray-50 font-medium text-sm transition-all hover:bg-gray-100 flex items-center justify-center gap-2">
+                                    <div class="flex -space-x-1">
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300"
+                                            style="background-color: #ffffff;"></div>
+                                        <div class="w-5 h-5 rounded-full border border-gray-200"
+                                            style="background-color: #ef4444;"></div>
+                                    </div>
+                                    <span>White and Red</span>
+                                </button>
+                                <button type="button" data-color="yellow_red"
+                                    class="product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center gap-2">
+                                    <div class="flex -space-x-1">
+                                        <div class="w-5 h-5 rounded-full border border-gray-200"
+                                            style="background-color: #eab308;"></div>
+                                        <div class="w-5 h-5 rounded-full border border-gray-200"
+                                            style="background-color: #ef4444;"></div>
+                                    </div>
+                                    <span>Yellow and Red</span>
+                                </button>
+                            </div>
+                            <input type="hidden" name="product_color" id="product-color-input" value="white_red">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Buying Price</label>
-                            <input type="number" name="buying_price" required step="0.01" class="w-full"
-                                placeholder="0.00">
+
+                        <!-- Size Selection (Chevrons only) -->
+                        <div id="size-section" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Size</label>
+                            <div id="product-size-selector" class="flex gap-3">
+                                <button type="button" data-size="1x1"
+                                    class="product-size-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-900 bg-gray-50 font-medium text-sm transition-all hover:bg-gray-100">
+                                    1x1
+                                </button>
+                                <button type="button" data-size="1x2"
+                                    class="product-size-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300">
+                                    1x2
+                                </button>
+                            </div>
+                            <input type="hidden" name="product_size" id="product-size-input" value="1x1">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
-                            <input type="number" name="selling_price" required step="0.01" class="w-full"
-                                placeholder="0.00">
+
+                        <!-- Pricing and Stock -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price (KSh)</label>
+                                <input type="number" name="selling_price" required step="0.01" class="w-full"
+                                    placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                                <input type="number" name="stock" required min="1" class="w-full" placeholder="0">
+                            </div>
                         </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">SKU/Barcode (Optional)</label>
-                            <input type="text" name="sku" class="w-full" placeholder="Scan or enter barcode">
+
+                        <!-- Sale Info -->
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-center gap-2 text-sm">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span id="sale-info-text" class="text-gray-600">Life Savers are sold in packs of
+                                    10</span>
+                            </div>
                         </div>
                     </div>
                 </div>

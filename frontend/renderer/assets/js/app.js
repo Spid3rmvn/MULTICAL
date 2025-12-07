@@ -18,7 +18,10 @@ const pageControllers = {
 /**
  * Initialize the application
  */
-function init() {
+async function init() {
+  // Wait for Store to initialize (loads data from database)
+  await Store.init();
+  
   setupNavigation();
   loadPage('dashboard');
   console.log('MULTICAL initialized');

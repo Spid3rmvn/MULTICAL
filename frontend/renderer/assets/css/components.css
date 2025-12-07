@@ -321,6 +321,12 @@
   border: 1px solid #fef3c7;
 }
 
+.status-badge--warning {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
 .status-badge--error {
   background-color: #fef2f2;
   color: #dc2626;

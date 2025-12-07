@@ -1,3 +1,0 @@
-"""
-MULTICAL Backend Application
-"""

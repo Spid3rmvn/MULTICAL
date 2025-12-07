@@ -23,15 +23,8 @@ module.exports = {
   webPreferences: {
     nodeIntegration: false,
     contextIsolation: true,
-    sandbox: true,
+    sandbox: false, // Required for better-sqlite3
     webSecurity: true
-  },
-
-  // Backend configuration
-  backend: {
-    host: 'localhost',
-    port: 8000,
-    protocol: 'http'
   },
 
   // Development options
@@ -40,3 +33,4 @@ module.exports = {
     devToolsPosition: 'right'
   }
 };
+

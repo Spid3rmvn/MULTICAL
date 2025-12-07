@@ -1,5 +1,6 @@
 const { ipcMain, app, dialog, BrowserWindow } = require('electron');
 const config = require('../../electron.config');
+const database = require('../../database');
 
 /**
  * IPC Handlers - Handle messages from renderer process
@@ -10,27 +11,125 @@ ipcMain.handle('app:version', () => {
   return app.getVersion();
 });
 
-// Backend URL
-ipcMain.handle('backend:url', () => {
-  const { protocol, host, port } = config.backend;
-  return `${protocol}://${host}:${port}`;
+// ==================== Products ====================
+
+ipcMain.handle('db:products:getAll', () => {
+  return database.getAllProducts();
 });
 
-// Backend health check
-ipcMain.handle('backend:health', async () => {
-  const { protocol, host, port } = config.backend;
-  const url = `${protocol}://${host}:${port}/api/v1/health`;
-  
+ipcMain.handle('db:products:get', (event, id) => {
+  return database.getProduct(id);
+});
+
+ipcMain.handle('db:products:add', (event, product) => {
+  return database.addProduct(product);
+});
+
+ipcMain.handle('db:products:update', (event, id, updates) => {
+  database.updateProduct(id, updates);
+  return { success: true };
+});
+
+ipcMain.handle('db:products:delete', (event, id) => {
+  database.deleteProduct(id);
+  return { success: true };
+});
+
+// ==================== Stock ====================
+
+ipcMain.handle('db:stock:getAll', () => {
+  return database.getAllStock();
+});
+
+ipcMain.handle('db:stock:get', (event, id) => {
+  return database.getStock(id);
+});
+
+ipcMain.handle('db:stock:getByColorSizeType', (event, color, size, stickerType) => {
+  return database.getStockByColorSizeAndType(color, size, stickerType);
+});
+
+ipcMain.handle('db:stock:add', (event, stockItem) => {
+  return database.addStock(stockItem);
+});
+
+ipcMain.handle('db:stock:update', (event, id, updates) => {
+  database.updateStock(id, updates);
+  return { success: true };
+});
+
+ipcMain.handle('db:stock:delete', (event, id) => {
+  database.deleteStock(id);
+  return { success: true };
+});
+
+// ==================== Sales ====================
+
+ipcMain.handle('db:sales:getAll', () => {
+  return database.getAllSales();
+});
+
+ipcMain.handle('db:sales:getToday', () => {
+  return database.getTodaySales();
+});
+
+ipcMain.handle('db:sales:add', (event, sale) => {
+  return database.addSale(sale);
+});
+
+ipcMain.handle('db:sales:getTodayTotal', () => {
+  return database.getTodayTotalSales();
+});
+
+// ==================== Debts ====================
+
+ipcMain.handle('db:debts:getAll', () => {
+  return database.getAllDebts();
+});
+
+ipcMain.handle('db:debts:getPending', () => {
+  return database.getPendingDebts();
+});
+
+ipcMain.handle('db:debts:add', (event, debt) => {
+  return database.addDebt(debt);
+});
+
+ipcMain.handle('db:debts:markPaid', (event, id) => {
+  database.markDebtPaid(id);
+  return { success: true };
+});
+
+ipcMain.handle('db:debts:delete', (event, id) => {
+  database.deleteDebt(id);
+  return { success: true };
+});
+
+ipcMain.handle('db:debts:getTotalOutstanding', () => {
+  return database.getTotalOutstanding();
+});
+
+ipcMain.handle('db:debts:getPaidThisMonth', () => {
+  return database.getPaidThisMonth();
+});
+
+ipcMain.handle('db:debts:getOverdue', () => {
+  return database.getOverdueDebts();
+});
+
+// ==================== Migration ====================
+
+ipcMain.handle('db:migrate', (event, localStorageData) => {
   try {
-    const response = await fetch(url);
-    const data = await response.json();
-    return { status: 'healthy', data };
+    database.migrateFromLocalStorage(localStorageData);
+    return { success: true };
   } catch (error) {
-    return { status: 'unhealthy', error: error.message };
+    return { success: false, error: error.message };
   }
 });
 
-// Window controls
+// ==================== Window Controls ====================
+
 ipcMain.on('window:minimize', (event) => {
   const window = BrowserWindow.fromWebContents(event.sender);
   if (window) window.minimize();
@@ -52,7 +151,8 @@ ipcMain.on('window:close', (event) => {
   if (window) window.close();
 });
 
-// File dialogs
+// ==================== File Dialogs ====================
+
 ipcMain.handle('dialog:openFile', async (event, options = {}) => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],

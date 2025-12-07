@@ -8,16 +8,17 @@ const SalesPage = {
   stockDropdown: null,
   saleTypeDropdown: null,
   paymentDropdown: null,
+  productDropdown: null,
+  productPaymentDropdown: null,
 
   init() {
     this.initCustomDropdowns();
     this.bindEvents();
-    this.updateProductDropdown();
     this.render();
     
     // Subscribe to store changes
     Store.subscribe('sales', () => this.render());
-    Store.subscribe('products', () => this.updateProductDropdown());
+    Store.subscribe('products', () => this.updateProductDropdownItems());
     Store.subscribe('stock', () => this.updateStockDropdownItems());
   },
 
@@ -28,15 +29,19 @@ const SalesPage = {
       const availableStock = Store.getAvailableStockColors();
       
       this.stockDropdown = new CustomDropdown(stockContainer, {
-        placeholder: availableStock.length > 0 ? 'Choose color' : 'No stock - add stock first',
+        placeholder: availableStock.length > 0 ? 'Choose sticker' : 'No stock - add stock first',
         showColorSwatch: true,
-        items: availableStock.map(s => ({
-          value: s.id.toString(),
-          label: `${s.color} - ${s.remaining.toLocaleString()}m`,
-          color: s.color,
-          remaining: s.remaining,
-          badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`
-        })),
+        items: availableStock.map(s => {
+          const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
+          return {
+            value: s.id.toString(),
+            label: `${s.color} (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
+            color: s.sticker_type === 'colored' ? s.color : null,
+            stickerType: s.sticker_type,
+            remaining: s.remaining,
+            badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`
+          };
+        }),
         onSelect: (selected) => {
           const hiddenInput = document.getElementById('sale-stock-id-input');
           if (hiddenInput) hiddenInput.value = selected.value;
@@ -66,7 +71,7 @@ const SalesPage = {
       this.saleTypeDropdown.selectItem(saleTypeContainer.querySelector('.dropdown-item'));
     }
 
-    // Payment Method Dropdown
+    // Payment Method Dropdown (Stock Sale)
     const paymentContainer = document.getElementById('payment-method-dropdown');
     if (paymentContainer) {
       this.paymentDropdown = new CustomDropdown(paymentContainer, {
@@ -84,6 +89,56 @@ const SalesPage = {
       });
       // Auto-select first item
       this.paymentDropdown.selectItem(paymentContainer.querySelector('.dropdown-item'));
+    }
+
+    // ==================== Product Sale Dropdowns ====================
+    
+    // Product Dropdown
+    const productContainer = document.getElementById('product-dropdown');
+    if (productContainer) {
+      const availableProducts = Store.products.filter(p => p.stock > 0);
+      
+      this.productDropdown = new CustomDropdown(productContainer, {
+        placeholder: availableProducts.length > 0 ? 'Choose product' : 'No products - add products first',
+        items: availableProducts.map(p => {
+          const typeConfig = PRODUCT_TYPES[p.product_type];
+          return {
+            value: p.id.toString(),
+            label: p.name,
+            price: p.selling_price,
+            stock: p.stock,
+            minQty: p.min_sale_qty || 1,
+            productType: p.product_type,
+            badge: `${p.stock} in stock`
+          };
+        }),
+        onSelect: (selected) => {
+          const hiddenInput = document.getElementById('sale-product-id-input');
+          if (hiddenInput) hiddenInput.value = selected.value;
+          this.updateProductInfo(selected);
+          this.calculateTotal();
+        }
+      });
+    }
+
+    // Payment Method Dropdown (Product Sale)
+    const productPaymentContainer = document.getElementById('product-payment-dropdown');
+    if (productPaymentContainer) {
+      this.productPaymentDropdown = new CustomDropdown(productPaymentContainer, {
+        placeholder: 'Cash',
+        items: [
+          { value: 'cash', label: 'Cash' },
+          { value: 'mpesa', label: 'M-Pesa' },
+          { value: 'card', label: 'Card' },
+          { value: 'credit', label: 'Credit (Add to Debt)' }
+        ],
+        onSelect: (selected) => {
+          const hiddenInput = document.getElementById('product-payment-input');
+          if (hiddenInput) hiddenInput.value = selected.value;
+        }
+      });
+      // Auto-select first item
+      this.productPaymentDropdown.selectItem(productPaymentContainer.querySelector('.dropdown-item'));
     }
   },
 
@@ -106,15 +161,22 @@ const SalesPage = {
             document.getElementById('stock-sale-form')?.reset();
             document.getElementById('sale-form')?.reset();
             this.resetStockSaleDisplay();
-            // Reset dropdowns
+            this.resetProductSaleDisplay();
+            // Reset stock sale dropdowns
             this.stockDropdown?.reset();
             this.saleTypeDropdown?.reset();
             this.paymentDropdown?.reset();
-            // Re-select defaults
+            // Reset product sale dropdowns
+            this.productDropdown?.reset();
+            this.productPaymentDropdown?.reset();
+            // Re-select defaults for stock sale
             const saleTypeContainer = document.getElementById('sale-type-dropdown');
             const paymentContainer = document.getElementById('payment-method-dropdown');
             if (saleTypeContainer) this.saleTypeDropdown?.selectItem(saleTypeContainer.querySelector('.dropdown-item'));
             if (paymentContainer) this.paymentDropdown?.selectItem(paymentContainer.querySelector('.dropdown-item'));
+            // Re-select defaults for product sale
+            const productPaymentContainer = document.getElementById('product-payment-dropdown');
+            if (productPaymentContainer) this.productPaymentDropdown?.selectItem(productPaymentContainer.querySelector('.dropdown-item'));
         }
     };
 
@@ -198,13 +260,17 @@ const SalesPage = {
 
     const availableStock = Store.getAvailableStockColors();
     
-    this.stockDropdown.setItems(availableStock.map(s => ({
-      value: s.id.toString(),
-      label: `${s.color} - ${s.remaining.toLocaleString()}m`,
-      color: s.color,
-      remaining: s.remaining,
-      badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`
-    })));
+    this.stockDropdown.setItems(availableStock.map(s => {
+      const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
+      return {
+        value: s.id.toString(),
+        label: `${s.color} (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
+        color: s.sticker_type === 'colored' ? s.color : null,
+        stickerType: s.sticker_type,
+        remaining: s.remaining,
+        badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`
+      };
+    }));
   },
 
   updateStockInfo(selected) {
@@ -277,6 +343,16 @@ const SalesPage = {
     if (infoEl) infoEl.textContent = '';
   },
 
+  resetProductSaleDisplay() {
+    const totalEl = document.getElementById('sale-total');
+    const infoEl = document.getElementById('product-sale-info');
+    const hintEl = document.getElementById('quantity-hint');
+
+    if (totalEl) totalEl.textContent = 'KSh 0.00';
+    if (infoEl) infoEl.textContent = '';
+    if (hintEl) hintEl.textContent = '';
+  },
+
   handleStockSaleSubmit(formData) {
     const stockId = parseInt(formData.get('stock_id'));
     const saleUnit = formData.get('sale_unit');
@@ -286,12 +362,12 @@ const SalesPage = {
     const customerName = formData.get('customer_name') || 'Walk-in';
 
     if (!stockId) {
-      alert('Please select a sticker color');
+      Toast.error('No Sticker Selected', 'Please select a sticker color');
       return;
     }
 
     if (!quantity || quantity <= 0) {
-      alert('Please enter a valid quantity');
+      Toast.error('Invalid Quantity', 'Please enter a valid quantity');
       return;
     }
 
@@ -302,19 +378,21 @@ const SalesPage = {
     const result = Store.deductStockMetres(stockId, metresToDeduct);
     
     if (!result.success) {
-      alert(result.error);
+      Toast.error('Stock Error', result.error);
       return;
     }
 
     // Get stock info for sale record
     const stockItem = Store.getStock(stockId);
     const total = metresToDeduct * pricePerMetre;
+    const typeConfig = STICKER_TYPES[stockItem.sticker_type] || STICKER_TYPES.colored;
 
     // Create sale record
     const sale = Store.addSale({
       type: 'stock',
       stock_id: stockId,
-      product_name: `${stockItem.color} Sticker`,
+      product_name: `${stockItem.color} ${typeConfig.name} Sticker`,
+      sticker_type: stockItem.sticker_type,
       quantity: `${metresToDeduct}m`,
       amount: total,
       payment_method: paymentMethod,
@@ -335,7 +413,8 @@ const SalesPage = {
     // Reset dropdowns
     this.updateStockDropdownItems();
 
-    // alert(`Sale completed! ${metresToDeduct}m deducted from ${stockItem.color} stickers.`);
+    // Show success toast
+    Toast.success('Sale Completed', `${metresToDeduct}m of ${stockItem.color} sticker sold for KSh ${total.toLocaleString()}`);
   },
 
   // ==================== Product Sale Functions ====================
@@ -346,12 +425,27 @@ const SalesPage = {
     const product = Store.getProduct(productId);
 
     if (!product) {
-      alert('Please select a product');
+      Toast.error('No Product Selected', 'Please select a product');
+      return;
+    }
+
+    // Check minimum sale quantity
+    const minQty = product.min_sale_qty || 1;
+    if (quantity < minQty) {
+      const typeConfig = PRODUCT_TYPES[product.product_type];
+      Toast.error('Minimum Quantity', `${typeConfig?.name || 'This product'} must be sold in ${typeConfig?.saleUnit || 'minimum ' + minQty + ' units'}`);
+      return;
+    }
+
+    // Validate quantity is multiple of min sale qty
+    if (quantity % minQty !== 0) {
+      const typeConfig = PRODUCT_TYPES[product.product_type];
+      Toast.error('Invalid Quantity', `${typeConfig?.name || 'This product'} must be sold in multiples of ${minQty}`);
       return;
     }
 
     if (quantity > product.stock) {
-      alert('Not enough stock!');
+      Toast.error('Insufficient Stock', `Only ${product.stock} units available`);
       return;
     }
 
@@ -366,6 +460,7 @@ const SalesPage = {
       type: 'product',
       product_id: productId,
       product_name: product.name,
+      product_type: product.product_type,
       quantity: quantity,
       amount: total,
       payment_method: paymentMethod,
@@ -385,16 +480,23 @@ const SalesPage = {
         description: `Sale: ${product.name} x${quantity}`
       });
     }
+
+    // Update product dropdown
+    this.updateProductDropdownItems();
+
+    // Show success toast
+    Toast.success('Sale Completed', `${quantity}x ${product.name} sold for KSh ${total.toLocaleString()}`);
   },
 
   calculateTotal() {
-    const select = document.getElementById('sale-product');
     const quantityInput = document.getElementById('sale-quantity');
     const discountInput = document.getElementById('sale-discount');
     const totalEl = document.getElementById('sale-total');
+    const productIdInput = document.getElementById('sale-product-id-input');
 
-    const option = select?.selectedOptions[0];
-    const price = parseFloat(option?.dataset?.price) || 0;
+    const productId = productIdInput?.value ? parseInt(productIdInput.value) : null;
+    const product = productId ? Store.getProduct(productId) : null;
+    const price = product?.selling_price || 0;
     const quantity = parseInt(quantityInput?.value) || 1;
     const discount = parseFloat(discountInput?.value) || 0;
 
@@ -406,14 +508,42 @@ const SalesPage = {
     }
   },
 
-  updateProductDropdown() {
-    const select = document.getElementById('sale-product');
-    if (!select) return;
+  updateProductInfo(selected) {
+    const infoEl = document.getElementById('product-sale-info');
+    const hintEl = document.getElementById('quantity-hint');
+    
+    if (infoEl && selected) {
+      infoEl.textContent = `KSh ${parseFloat(selected.price).toLocaleString()} per unit • ${selected.stock} in stock`;
+    }
+    
+    if (hintEl && selected) {
+      const minQty = selected.minQty || 1;
+      const typeConfig = PRODUCT_TYPES[selected.productType];
+      if (typeConfig && minQty > 1) {
+        hintEl.textContent = `Minimum: ${minQty} (sold in ${typeConfig.saleUnit})`;
+      } else {
+        hintEl.textContent = '';
+      }
+    }
+  },
 
-    select.innerHTML = '<option value="">Choose a product</option>' + 
-      Store.products.map(p => 
-        `<option value="${p.id}" data-price="${p.selling_price}">${p.name} - KSh ${p.selling_price.toFixed(2)} (${p.stock} in stock)</option>`
-      ).join('');
+  updateProductDropdownItems() {
+    if (!this.productDropdown) return;
+
+    const availableProducts = Store.products.filter(p => p.stock > 0);
+    
+    this.productDropdown.setItems(availableProducts.map(p => {
+      const typeConfig = PRODUCT_TYPES[p.product_type];
+      return {
+        value: p.id.toString(),
+        label: p.name,
+        price: p.selling_price,
+        stock: p.stock,
+        minQty: p.min_sale_qty || 1,
+        productType: p.product_type,
+        badge: `${p.stock} in stock`
+      };
+    }));
   },
 
   // ==================== Render Sales Table ====================

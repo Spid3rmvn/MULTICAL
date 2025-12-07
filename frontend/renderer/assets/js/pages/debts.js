@@ -70,6 +70,7 @@ const DebtsPage = {
       description: formData.get('description')
     };
     Store.addDebt(debt);
+    Toast.success('Debt Added', `KSh ${debt.amount.toLocaleString()} for ${debt.customer_name}`);
   },
 
   render() {
@@ -129,13 +130,27 @@ const DebtsPage = {
   },
 
   markPaid(id) {
+    const debt = Store.debts.find(d => d.id === id);
     Store.markDebtPaid(id);
+    if (debt) {
+      Toast.success('Debt Paid', `KSh ${debt.amount.toLocaleString()} from ${debt.customer_name} marked as paid`);
+    }
   },
 
   delete(id) {
-    if (confirm('Are you sure you want to delete this debt record?')) {
-      Store.deleteDebt(id);
-    }
+    const debt = Store.debts.find(d => d.id === id);
+    if (!debt) return;
+    
+    ConfirmModal.show({
+      title: 'Delete Debt Record?',
+      message: 'Are you sure you want to delete this debt record? This action cannot be undone.',
+      itemName: debt.customer_name,
+      itemDetails: `KSh ${debt.amount.toLocaleString()} • ${debt.description || 'No description'}`,
+      onConfirm: () => {
+        Store.deleteDebt(id);
+        Toast.success('Debt Deleted', `Debt record for ${debt.customer_name} has been removed`);
+      }
+    });
   }
 };
 

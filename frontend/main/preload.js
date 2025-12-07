@@ -16,34 +16,55 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximizeWindow: () => ipcRenderer.send('window:maximize'),
   closeWindow: () => ipcRenderer.send('window:close'),
   
-  // Backend communication
-  getBackendUrl: () => ipcRenderer.invoke('backend:url'),
-  checkBackendHealth: () => ipcRenderer.invoke('backend:health'),
-  
-  // File system (if needed)
+  // File system
   selectFile: (options) => ipcRenderer.invoke('dialog:openFile', options),
   selectDirectory: (options) => ipcRenderer.invoke('dialog:openDirectory', options),
+});
+
+// Database API exposed to renderer
+contextBridge.exposeInMainWorld('db', {
+  // ==================== Products ====================
+  products: {
+    getAll: () => ipcRenderer.invoke('db:products:getAll'),
+    get: (id) => ipcRenderer.invoke('db:products:get', id),
+    add: (product) => ipcRenderer.invoke('db:products:add', product),
+    update: (id, updates) => ipcRenderer.invoke('db:products:update', id, updates),
+    delete: (id) => ipcRenderer.invoke('db:products:delete', id)
+  },
   
-  // IPC communication
-  send: (channel, data) => {
-    const validChannels = ['app:ready', 'window:minimize', 'window:maximize', 'window:close'];
-    if (validChannels.includes(channel)) {
-      ipcRenderer.send(channel, data);
-    }
+  // ==================== Stock ====================
+  stock: {
+    getAll: () => ipcRenderer.invoke('db:stock:getAll'),
+    get: (id) => ipcRenderer.invoke('db:stock:get', id),
+    getByColorSizeType: (color, size, stickerType) => 
+      ipcRenderer.invoke('db:stock:getByColorSizeType', color, size, stickerType),
+    add: (stockItem) => ipcRenderer.invoke('db:stock:add', stockItem),
+    update: (id, updates) => ipcRenderer.invoke('db:stock:update', id, updates),
+    delete: (id) => ipcRenderer.invoke('db:stock:delete', id)
   },
-  receive: (channel, callback) => {
-    const validChannels = ['app:update', 'backend:status'];
-    if (validChannels.includes(channel)) {
-      ipcRenderer.on(channel, (event, ...args) => callback(...args));
-    }
+  
+  // ==================== Sales ====================
+  sales: {
+    getAll: () => ipcRenderer.invoke('db:sales:getAll'),
+    getToday: () => ipcRenderer.invoke('db:sales:getToday'),
+    add: (sale) => ipcRenderer.invoke('db:sales:add', sale),
+    getTodayTotal: () => ipcRenderer.invoke('db:sales:getTodayTotal')
   },
-  invoke: (channel, data) => {
-    const validChannels = ['app:version', 'backend:url', 'backend:health', 'dialog:openFile', 'dialog:openDirectory'];
-    if (validChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, data);
-    }
-    return Promise.reject(new Error('Invalid channel'));
-  }
+  
+  // ==================== Debts ====================
+  debts: {
+    getAll: () => ipcRenderer.invoke('db:debts:getAll'),
+    getPending: () => ipcRenderer.invoke('db:debts:getPending'),
+    add: (debt) => ipcRenderer.invoke('db:debts:add', debt),
+    markPaid: (id) => ipcRenderer.invoke('db:debts:markPaid', id),
+    delete: (id) => ipcRenderer.invoke('db:debts:delete', id),
+    getTotalOutstanding: () => ipcRenderer.invoke('db:debts:getTotalOutstanding'),
+    getPaidThisMonth: () => ipcRenderer.invoke('db:debts:getPaidThisMonth'),
+    getOverdue: () => ipcRenderer.invoke('db:debts:getOverdue')
+  },
+  
+  // ==================== Migration ====================
+  migrate: (localStorageData) => ipcRenderer.invoke('db:migrate', localStorageData)
 });
 
 // Notify main process that preload is ready

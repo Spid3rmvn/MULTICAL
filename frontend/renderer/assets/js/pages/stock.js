@@ -5,8 +5,11 @@
 
 const StockPage = {
   metresPerRoll: 50, // 1 roll = 50 metres
+  selectedStickerType: 'colored', // Default sticker type
 
   init() {
+    this.sizeRowIdCounter = 0;
+    this.selectedStickerType = 'colored';
     this.bindEvents();
     this.render();
     this.updateSummary();
@@ -25,12 +28,14 @@ const StockPage = {
     const btnClose = document.getElementById('btn-close-stock-modal');
     const btnCancel = document.getElementById('btn-cancel-stock');
     const addForm = document.getElementById('add-stock-form');
-    const rollsInput = document.getElementById('stock-rolls-input');
+    const btnAddSizeRow = document.getElementById('btn-add-size-row');
 
     // Open Modal
     if (btnAdd && modal) {
       btnAdd.addEventListener('click', () => {
         modal.classList.add('open');
+        // Reset and add initial row
+        this.resetModal();
       });
     }
 
@@ -38,8 +43,7 @@ const StockPage = {
     const closeModal = () => {
         if (modal) {
             modal.classList.remove('open');
-            addForm?.reset();
-            this.updateCalculatedMetres(0);
+            this.resetModal();
         }
     };
 
@@ -56,51 +60,267 @@ const StockPage = {
       });
     }
 
-    // Auto-calculate metres when rolls change
-    if (rollsInput) {
-      rollsInput.addEventListener('input', () => {
-        const rolls = parseInt(rollsInput.value) || 0;
-        this.updateCalculatedMetres(rolls * this.metresPerRoll);
+    // Add Size Row Button
+    if (btnAddSizeRow) {
+      btnAddSizeRow.addEventListener('click', () => {
+        this.addSizeRow();
       });
     }
+
+    // Sticker Type Selector Buttons
+    const typeButtons = document.querySelectorAll('.sticker-type-btn');
+    typeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.selectStickerType(btn.dataset.type);
+      });
+    });
 
     // Handle Form Submit
     if (addForm) {
       addForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSubmit(new FormData(addForm));
+        this.handleSubmit();
         closeModal();
       });
     }
   },
 
-  updateCalculatedMetres(metres) {
-    const el = document.getElementById('calculated-metres');
-    if (el) {
-      el.textContent = metres.toLocaleString();
+  resetModal() {
+    const container = document.getElementById('size-rows-container');
+    if (container) {
+      container.innerHTML = '';
+      this.sizeRowIdCounter = 0;
+      this.addSizeRow(); // Add initial row
+    }
+    const colorInput = document.getElementById('stock-color-input');
+    if (colorInput) {
+      colorInput.value = '';
+    }
+    // Reset sticker type to default
+    this.selectedStickerType = 'colored';
+    this.updateStickerTypeUI();
+    this.updateTotalSummary();
+  },
+
+  selectStickerType(type) {
+    this.selectedStickerType = type;
+    const hiddenInput = document.getElementById('sticker-type-input');
+    if (hiddenInput) hiddenInput.value = type;
+    this.updateStickerTypeUI();
+  },
+
+  updateStickerTypeUI() {
+    const typeButtons = document.querySelectorAll('.sticker-type-btn');
+    const colorLabel = document.getElementById('color-label');
+    const colorInput = document.getElementById('stock-color-input');
+    const colorHint = document.getElementById('color-hint');
+    
+    const typeConfig = STICKER_TYPES[this.selectedStickerType];
+    
+    // Update button states
+    typeButtons.forEach(btn => {
+      const btnType = btn.dataset.type;
+      const config = STICKER_TYPES[btnType];
+      
+      if (btnType === this.selectedStickerType) {
+        // Active state based on type
+        if (btnType === 'colored') {
+          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium text-sm transition-all hover:bg-purple-100';
+        } else if (btnType === 'clear') {
+          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-800 font-medium text-sm transition-all hover:bg-blue-100';
+        } else if (btnType === 'reflective') {
+          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-amber-500 bg-amber-50 text-amber-800 font-medium text-sm transition-all hover:bg-amber-100';
+        }
+      } else {
+        // Inactive state
+        btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
+      }
+    });
+
+    // Update color label and hint based on type
+    if (this.selectedStickerType === 'colored') {
+      if (colorLabel) colorLabel.textContent = 'Sticker Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red, Blue, Gold';
+      if (colorHint) colorHint.textContent = 'Enter a color name for your sticker';
+    } else if (this.selectedStickerType === 'clear') {
+      if (colorLabel) colorLabel.textContent = 'Sticker Name/Variant';
+      if (colorInput) colorInput.placeholder = 'e.g. Matte Clear, Glossy Clear';
+      if (colorHint) colorHint.textContent = 'Enter a name or variant for your clear sticker';
+    } else if (this.selectedStickerType === 'reflective') {
+      if (colorLabel) colorLabel.textContent = 'Sticker Name/Finish';
+      if (colorInput) colorInput.placeholder = 'e.g. Chrome Silver, Gold Mirror';
+      if (colorHint) colorHint.textContent = 'Enter a name or finish type for your reflective sticker';
     }
   },
 
-  handleSubmit(formData) {
-    const color = formData.get('color').trim();
-    const rolls = parseInt(formData.get('rolls'));
+  addSizeRow() {
+    const container = document.getElementById('size-rows-container');
+    if (!container) return;
 
-    if (!color || !rolls) {
-      alert('Please fill in all fields');
+    const rowId = this.sizeRowIdCounter++;
+    const isFirstRow = container.children.length === 0;
+
+    const row = document.createElement('div');
+    row.className = 'flex gap-3 items-start';
+    row.dataset.rowId = rowId;
+    row.innerHTML = `
+      <div class="flex-1">
+        <input type="number" 
+               class="w-full size-input" 
+               data-row-id="${rowId}"
+               step="0.1" 
+               min="0.1" 
+               placeholder="Size (e.g. 1, 1.2)" 
+               required>
+      </div>
+      <div class="flex-1">
+        <input type="number" 
+               class="w-full rolls-input" 
+               data-row-id="${rowId}"
+               min="1" 
+               placeholder="Rolls" 
+               required>
+      </div>
+      <div class="flex-1">
+        <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 text-sm">
+          <span class="metres-display" data-row-id="${rowId}">0</span>m
+        </div>
+      </div>
+      ${!isFirstRow ? `
+        <button type="button" 
+                class="remove-row-btn p-2 text-gray-400 hover:text-red-600 transition-colors" 
+                data-row-id="${rowId}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      ` : '<div class="w-9"></div>'}
+    `;
+
+    container.appendChild(row);
+
+    // Bind events for this row
+    const sizeInput = row.querySelector('.size-input');
+    const rollsInput = row.querySelector('.rolls-input');
+    const removeBtn = row.querySelector('.remove-row-btn');
+
+    if (sizeInput) {
+      sizeInput.addEventListener('input', () => this.updateRowMetres(rowId));
+    }
+    if (rollsInput) {
+      rollsInput.addEventListener('input', () => this.updateRowMetres(rowId));
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => this.removeSizeRow(rowId));
+    }
+  },
+
+  removeSizeRow(rowId) {
+    const row = document.querySelector(`[data-row-id="${rowId}"]`);
+    if (row) {
+      row.remove();
+      this.updateTotalSummary();
+    }
+  },
+
+  updateRowMetres(rowId) {
+    const sizeInput = document.querySelector(`.size-input[data-row-id="${rowId}"]`);
+    const rollsInput = document.querySelector(`.rolls-input[data-row-id="${rowId}"]`);
+    const metresDisplay = document.querySelector(`.metres-display[data-row-id="${rowId}"]`);
+
+    if (sizeInput && rollsInput && metresDisplay) {
+      const size = parseFloat(sizeInput.value) || 0;
+      const rolls = parseInt(rollsInput.value) || 0;
+      const metresPerRoll = this.metresPerRoll * size;
+      const totalMetres = rolls * metresPerRoll;
+      
+      metresDisplay.textContent = totalMetres.toLocaleString();
+    }
+
+    this.updateTotalSummary();
+  },
+
+  updateTotalSummary() {
+    const sizeInputs = document.querySelectorAll('.size-input');
+    const rollsInputs = document.querySelectorAll('.rolls-input');
+    
+    let totalRolls = 0;
+    let totalMetres = 0;
+
+    rollsInputs.forEach((input, index) => {
+      const rolls = parseInt(input.value) || 0;
+      const size = parseFloat(sizeInputs[index]?.value) || 0;
+      const metresPerRoll = this.metresPerRoll * size;
+      
+      totalRolls += rolls;
+      totalMetres += rolls * metresPerRoll;
+    });
+
+    const totalRollsEl = document.getElementById('total-rolls');
+    const totalMetresEl = document.getElementById('total-metres');
+
+    if (totalRollsEl) totalRollsEl.textContent = totalRolls.toLocaleString();
+    if (totalMetresEl) totalMetresEl.textContent = totalMetres.toLocaleString();
+  },
+
+  handleSubmit() {
+    const colorInput = document.getElementById('stock-color-input');
+    const color = colorInput?.value.trim();
+
+    if (!color) {
+      Toast.error('Missing Color', 'Please enter a color');
       return;
     }
 
-    // Check if this color already exists
-    const existing = Store.getStockByColor(color);
-    if (existing) {
-      // Add to existing stock
-      Store.addRollsToStock(existing.id, rolls);
-    } else {
-      // Create new stock entry
-      Store.addStock({
-        color: color,
-        rolls: rolls
-      });
+    // Get all size rows
+    const sizeInputs = document.querySelectorAll('.size-input');
+    const rollsInputs = document.querySelectorAll('.rolls-input');
+
+    if (sizeInputs.length === 0) {
+      Toast.error('No Size Variant', 'Please add at least one size variant');
+      return;
+    }
+
+    // Get selected sticker type
+    const stickerType = this.selectedStickerType || 'colored';
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    // Process each size row
+    sizeInputs.forEach((sizeInput, index) => {
+      const size = sizeInput.value.trim();
+      const rolls = parseInt(rollsInputs[index]?.value);
+
+      if (!size || !rolls || rolls < 1) {
+        return; // Skip invalid rows
+      }
+
+      // Check if this color, size, and sticker type combination already exists
+      const existing = Store.getStockByColorSizeAndType(color, size, stickerType);
+      if (existing) {
+        // Add to existing stock
+        Store.addRollsToStock(existing.id, rolls);
+        updatedCount++;
+      } else {
+        // Create new stock entry
+        Store.addStock({
+          color: color,
+          size: size,
+          sticker_type: stickerType,
+          rolls: rolls
+        });
+        addedCount++;
+      }
+    });
+
+    // Show success message
+    const messages = [];
+    if (addedCount > 0) messages.push(`Added ${addedCount} new size variant${addedCount > 1 ? 's' : ''}`);
+    if (updatedCount > 0) messages.push(`Updated ${updatedCount} existing variant${updatedCount > 1 ? 's' : ''}`);
+    
+    if (messages.length > 0) {
+      Toast.success('Stock Added', `${messages.join(' and ')} for ${color}`);
     }
   },
 
@@ -138,7 +358,7 @@ const StockPage = {
     if (stock.length === 0) {
       tbody.innerHTML = `
         <tr class="text-center">
-            <td colspan="8" class="px-5 py-8 text-gray-500">
+            <td colspan="10" class="px-5 py-8 text-gray-500">
                 <div class="flex flex-col items-center justify-center">
                     <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -156,15 +376,25 @@ const StockPage = {
       const remaining = Store.getRemainingMetres(item.id);
       const rollsLeft = Store.getRemainingRolls(item.id);
       const status = this.getStockStatus(remaining, item.total_metres);
+      const stickerTypeConfig = STICKER_TYPES[item.sticker_type] || STICKER_TYPES.colored;
 
       return `
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="px-6 py-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${stickerTypeConfig.badgeClass}">
+              ${stickerTypeConfig.name}
+            </span>
+          </td>
+          <td class="px-6 py-4">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg border border-gray-200 shadow-sm" style="background-color: ${this.getColorHex(item.color)};"></div>
+              ${item.sticker_type === 'colored' ? `<div class="w-8 h-8 rounded-lg border border-gray-200 shadow-sm" style="background-color: ${this.getColorHex(item.color)};"></div>` : 
+                item.sticker_type === 'clear' ? `<div class="w-8 h-8 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-white to-gray-100"></div>` :
+                `<div class="w-8 h-8 rounded-lg border border-gray-200 shadow-sm bg-gradient-to-br from-gray-200 via-white to-gray-300"></div>`
+              }
               <span class="text-sm font-medium text-gray-900">${item.color}</span>
             </div>
           </td>
+          <td class="px-6 py-4 text-sm text-gray-600">${item.size || '1'}</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.rolls}</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.total_metres.toLocaleString()}m</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.metres_used.toLocaleString()}m</td>
@@ -266,9 +496,22 @@ const StockPage = {
   },
 
   delete(id) {
-    if (confirm('Are you sure you want to delete this stock entry?')) {
-      Store.deleteStock(id);
-    }
+    const stockItem = Store.stock.find(s => s.id === id);
+    if (!stockItem) return;
+
+    const typeConfig = STICKER_TYPES[stockItem.sticker_type] || STICKER_TYPES.colored;
+    const remaining = Store.getRemainingMetres(id);
+    
+    ConfirmModal.show({
+      title: 'Delete Stock Entry?',
+      message: 'Are you sure you want to delete this stock entry? This action cannot be undone.',
+      itemName: `${stockItem.color} - Size ${stockItem.size || '1'}`,
+      itemDetails: `${typeConfig.name} Sticker • ${remaining.toLocaleString()}m remaining`,
+      onConfirm: () => {
+        Store.deleteStock(id);
+        Toast.success('Stock Deleted', `${stockItem.color} sticker stock has been removed`);
+      }
+    });
   }
 };
 

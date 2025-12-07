@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const config = require('../electron.config');
 const { createMenu } = require('./menu');
+const database = require('../database');
 
 // Keep a global reference of the window object
 let mainWindow = null;
@@ -25,7 +26,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: config.webPreferences.nodeIntegration,
       contextIsolation: config.webPreferences.contextIsolation,
-      sandbox: config.webPreferences.sandbox,
+      sandbox: false, // Required for better-sqlite3
       webSecurity: config.webPreferences.webSecurity
     }
   });
@@ -56,6 +57,9 @@ function createWindow() {
 
 // App lifecycle events
 app.whenReady().then(() => {
+  // Initialize database
+  database.init();
+  
   createWindow();
 
   app.on('activate', () => {
@@ -73,8 +77,14 @@ app.on('window-all-closed', () => {
   }
 });
 
+app.on('before-quit', () => {
+  // Close database connection before quitting
+  database.close();
+});
+
 // IPC Handlers
 require('./handlers');
 
 // Export for testing
-module.exports = { createWindow, mainWindow };
+module.exports = { createWindow, mainWindow, database };
+
