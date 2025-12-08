@@ -93,6 +93,8 @@ const Store = {
   sales: [],
   debts: [],
   stock: [],
+  services: [],
+  serviceTransactions: [],
 
   // Initialization flag
   initialized: false,
@@ -102,7 +104,9 @@ const Store = {
     products: [],
     sales: [],
     debts: [],
-    stock: []
+    stock: [],
+    services: [],
+    serviceTransactions: []
   },
 
   // ==================== Initialization ====================
@@ -137,10 +141,10 @@ const Store = {
 
   checkLocalStorageData() {
     try {
-      const products = localStorage.getItem('multical_products');
-      const stock = localStorage.getItem('multical_stock');
-      const sales = localStorage.getItem('multical_sales');
-      const debts = localStorage.getItem('multical_debts');
+      const products = localStorage.getItem('multiprints_products');
+      const stock = localStorage.getItem('multiprints_stock');
+      const sales = localStorage.getItem('multiprints_sales');
+      const debts = localStorage.getItem('multiprints_debts');
       
       return (products && JSON.parse(products).length > 0) ||
              (stock && JSON.parse(stock).length > 0) ||
@@ -154,10 +158,10 @@ const Store = {
   async migrateToDatabase() {
     try {
       const localData = {
-        products: JSON.parse(localStorage.getItem('multical_products') || '[]'),
-        stock: JSON.parse(localStorage.getItem('multical_stock') || '[]'),
-        sales: JSON.parse(localStorage.getItem('multical_sales') || '[]'),
-        debts: JSON.parse(localStorage.getItem('multical_debts') || '[]')
+        products: JSON.parse(localStorage.getItem('multiprints_products') || '[]'),
+        stock: JSON.parse(localStorage.getItem('multiprints_stock') || '[]'),
+        sales: JSON.parse(localStorage.getItem('multiprints_sales') || '[]'),
+        debts: JSON.parse(localStorage.getItem('multiprints_debts') || '[]')
       };
       
       await window.db.migrate(localData);
@@ -168,10 +172,10 @@ const Store = {
   },
 
   clearLocalStorage() {
-    localStorage.removeItem('multical_products');
-    localStorage.removeItem('multical_stock');
-    localStorage.removeItem('multical_sales');
-    localStorage.removeItem('multical_debts');
+    localStorage.removeItem('multiprints_products');
+    localStorage.removeItem('multiprints_stock');
+    localStorage.removeItem('multiprints_sales');
+    localStorage.removeItem('multiprints_debts');
     console.log('Cleared localStorage data');
   },
 
@@ -181,8 +185,10 @@ const Store = {
       this.stock = await window.db.stock.getAll();
       this.sales = await window.db.sales.getAll();
       this.debts = await window.db.debts.getAll();
+      this.services = await window.db.services.getAll();
+      this.serviceTransactions = await window.db.serviceTransactions.getAll();
       
-      console.log(`Loaded: ${this.products.length} products, ${this.stock.length} stock, ${this.sales.length} sales, ${this.debts.length} debts`);
+      console.log(`Loaded: ${this.products.length} products, ${this.stock.length} stock, ${this.sales.length} sales, ${this.debts.length} debts, ${this.services.length} services, ${this.serviceTransactions.length} service transactions`);
     } catch (error) {
       console.error('Failed to load from database:', error);
     }
@@ -190,10 +196,10 @@ const Store = {
 
   loadFromLocalStorage() {
     try {
-      this.products = JSON.parse(localStorage.getItem('multical_products') || '[]');
-      this.stock = JSON.parse(localStorage.getItem('multical_stock') || '[]');
-      this.sales = JSON.parse(localStorage.getItem('multical_sales') || '[]');
-      this.debts = JSON.parse(localStorage.getItem('multical_debts') || '[]');
+      this.products = JSON.parse(localStorage.getItem('multiprints_products') || '[]');
+      this.stock = JSON.parse(localStorage.getItem('multiprints_stock') || '[]');
+      this.sales = JSON.parse(localStorage.getItem('multiprints_sales') || '[]');
+      this.debts = JSON.parse(localStorage.getItem('multiprints_debts') || '[]');
       this.initialized = true;
     } catch (error) {
       console.error('Failed to load from localStorage:', error);
@@ -499,6 +505,80 @@ const Store = {
       metresUsed: this.stock.reduce((sum, s) => sum + s.metres_used, 0),
       metresRemaining: this.stock.reduce((sum, s) => sum + (s.total_metres - s.metres_used), 0)
     };
+  },
+
+  // ==================== Services CRUD ====================
+  
+  async addService(service) {
+    try {
+      const result = await window.db.services.add(service);
+      this.services.unshift(result);
+      this.notify('services');
+      return result;
+    } catch (error) {
+      console.error('Failed to add service:', error);
+      return null;
+    }
+  },
+
+  async updateService(id, updates) {
+    try {
+      await window.db.services.update(id, updates);
+      const index = this.services.findIndex(s => s.id === id);
+      if (index !== -1) {
+        this.services[index] = { ...this.services[index], ...updates };
+      }
+      this.notify('services');
+      return this.services[index];
+    } catch (error) {
+      console.error('Failed to update service:', error);
+      return null;
+    }
+  },
+
+  async deleteService(id) {
+    try {
+      await window.db.services.delete(id);
+      this.services = this.services.filter(s => s.id !== id);
+      this.notify('services');
+    } catch (error) {
+      console.error('Failed to delete service:', error);
+    }
+  },
+
+  getService(id) {
+    return this.services.find(s => s.id === id);
+  },
+
+  getActiveServices() {
+    return this.services.filter(s => s.is_active === 1);
+  },
+
+  // ==================== Service Transactions CRUD ====================
+  
+  async addServiceTransaction(transaction) {
+    try {
+      const result = await window.db.serviceTransactions.add(transaction);
+      this.serviceTransactions.unshift(result);
+      this.notify('serviceTransactions');
+      return result;
+    } catch (error) {
+      console.error('Failed to add service transaction:', error);
+      return null;
+    }
+  },
+
+  getTodayServiceTransactions() {
+    const today = new Date().toDateString();
+    return this.serviceTransactions.filter(t => new Date(t.timestamp).toDateString() === today);
+  },
+
+  getTodayServiceEarnings() {
+    return this.getTodayServiceTransactions().reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  getTotalServiceEarnings() {
+    return this.serviceTransactions.reduce((sum, t) => sum + t.amount, 0);
   }
 };
 

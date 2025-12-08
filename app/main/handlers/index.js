@@ -117,6 +117,56 @@ ipcMain.handle('db:debts:getOverdue', () => {
   return database.getOverdueDebts();
 });
 
+// ==================== Services ====================
+
+ipcMain.handle('db:services:getAll', () => {
+  return database.getAllServices();
+});
+
+ipcMain.handle('db:services:getActive', () => {
+  return database.getActiveServices();
+});
+
+ipcMain.handle('db:services:get', (event, id) => {
+  return database.getService(id);
+});
+
+ipcMain.handle('db:services:add', (event, service) => {
+  return database.addService(service);
+});
+
+ipcMain.handle('db:services:update', (event, id, updates) => {
+  database.updateService(id, updates);
+  return { success: true };
+});
+
+ipcMain.handle('db:services:delete', (event, id) => {
+  database.deleteService(id);
+  return { success: true };
+});
+
+// ==================== Service Transactions ====================
+
+ipcMain.handle('db:serviceTransactions:getAll', () => {
+  return database.getAllServiceTransactions();
+});
+
+ipcMain.handle('db:serviceTransactions:getToday', () => {
+  return database.getTodayServiceTransactions();
+});
+
+ipcMain.handle('db:serviceTransactions:add', (event, transaction) => {
+  return database.addServiceTransaction(transaction);
+});
+
+ipcMain.handle('db:serviceTransactions:getTodayTotal', () => {
+  return database.getTodayTotalServiceEarnings();
+});
+
+ipcMain.handle('db:serviceTransactions:getTotal', () => {
+  return database.getTotalServiceEarnings();
+});
+
 // ==================== Migration ====================
 
 ipcMain.handle('db:migrate', (event, localStorageData) => {

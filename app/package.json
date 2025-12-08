@@ -1,7 +1,7 @@
 {
-  "name": "multical",
+  "name": "multiprints",
   "version": "1.0.0",
-  "description": "MULTICAL - Offline Desktop Application",
+  "description": "MULTIPRINTS - Offline Desktop Application",
   "main": "main/index.js",
   "scripts": {
     "start": "electron . --no-sandbox",

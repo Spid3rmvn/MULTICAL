@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' http://localhost:8000">
-  <title>MULTICAL</title>
+  <title>MULTIPRINTS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -57,7 +57,7 @@
               </path>
             </svg>
           </div>
-          <span class="font-bold text-lg text-gray-900 tracking-tight">Multical</span>
+          <span class="font-bold text-lg text-gray-900 tracking-tight">Multiprints</span>
         </div>
       </div>
 
@@ -103,6 +103,16 @@
                 </path>
               </svg>
               Sales
+            </a>
+          </li>
+          <li>
+            <a href="#" class="nav-item-monochrome" data-page="services">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                </path>
+              </svg>
+              Services
             </a>
           </li>
           <li>
@@ -200,32 +210,20 @@
               </path>
             </svg>
           </button>
-
-          <!-- User Profile -->
-          <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
-            <div class="user-avatar">
-              <img src="https://ui-avatars.com/api/?name=User&background=7c3aed&color=fff&size=36" alt="User"
-                class="w-full h-full rounded-full object-cover">
-            </div>
-            <div class="user-info hidden sm:block">
-              <p class="user-name">Andrew Mayodi</p>
-              <p class="user-role">Admin Store</p>
-            </div>
-          </div>
         </div>
       </header>
 
       <!-- Page Container - Dynamic content loaded here -->
-      <main id="page-container" class="flex-1 p-6 overflow-y-auto">
-        <!-- Pages are loaded dynamically here -->
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center">
-            <div class="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-500">Loading...</p>
-          </div>
-        </div>
-      </main>
+  <main id="page-container" class="flex-1 p-6 overflow-y-auto">
+    <!-- Pages are loaded dynamically here -->
+    <div class="flex items-center justify-center h-full">
+      <div class="text-center">
+        <div class="w-8 h-8 border-4 border-gray-200 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+        <p class="text-gray-500">Loading...</p>
+      </div>
     </div>
+  </main>
+  </div>
   </div>
 
   <!-- Scripts - Order matters! -->
@@ -238,6 +236,7 @@
   <script src="assets/js/pages/products.js"></script>
   <script src="assets/js/pages/stock.js"></script>
   <script src="assets/js/pages/sales.js"></script>
+  <script src="assets/js/pages/services.js"></script>
   <script src="assets/js/pages/debts.js"></script>
   <script src="assets/js/app.js"></script>
 </body>

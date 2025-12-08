@@ -180,6 +180,101 @@
   color: #9ca3af; /* Keep chevron subtle on black bg */
 }
 
+/* ==================== Calendar Grid ==================== */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.calendar-day-header {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  padding: 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.calendar-day:hover {
+  border-color: #000000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-day.other-month {
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.calendar-day.today {
+  background: #f3f4f6;
+  border-color: #000000;
+  font-weight: 600;
+}
+
+.calendar-day.selected {
+  background: #000000;
+  color: white;
+  border-color: #000000;
+}
+
+.calendar-day.selected .calendar-day-number {
+  color: white;
+}
+
+.calendar-day.selected .calendar-debt-indicator {
+  background: white;
+}
+
+.calendar-day-number {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.calendar-debt-indicator {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.calendar-debt-indicator.overdue {
+  background: #ef4444;
+}
+
+.calendar-debt-indicator.due-soon {
+  background: #eab308;
+}
+
+.calendar-debt-indicator.upcoming {
+  background: #3b82f6;
+}
+
+.calendar-debt-count {
+  margin-top: 0.25rem;
+  font-size: 0.625rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
 /* ==================== Stat Cards - Clean Minimalist ==================== */
 .stat-card-modern {
   background: white;

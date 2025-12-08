@@ -12,6 +12,7 @@ const pageControllers = {
   products: 'ProductsPage',
   stock: 'StockPage',
   sales: 'SalesPage',
+  services: 'ServicesPage',
   debts: 'DebtsPage'
 };
 
@@ -24,7 +25,7 @@ async function init() {
   
   setupNavigation();
   loadPage('dashboard');
-  console.log('MULTICAL initialized');
+  console.log('MULTIPRINTS initialized');
 }
 
 /**

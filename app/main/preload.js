@@ -63,6 +63,25 @@ contextBridge.exposeInMainWorld('db', {
     getOverdue: () => ipcRenderer.invoke('db:debts:getOverdue')
   },
   
+  // ==================== Services ====================
+  services: {
+    getAll: () => ipcRenderer.invoke('db:services:getAll'),
+    getActive: () => ipcRenderer.invoke('db:services:getActive'),
+    get: (id) => ipcRenderer.invoke('db:services:get', id),
+    add: (service) => ipcRenderer.invoke('db:services:add', service),
+    update: (id, updates) => ipcRenderer.invoke('db:services:update', id, updates),
+    delete: (id) => ipcRenderer.invoke('db:services:delete', id)
+  },
+  
+  // ==================== Service Transactions ====================
+  serviceTransactions: {
+    getAll: () => ipcRenderer.invoke('db:serviceTransactions:getAll'),
+    getToday: () => ipcRenderer.invoke('db:serviceTransactions:getToday'),
+    add: (transaction) => ipcRenderer.invoke('db:serviceTransactions:add', transaction),
+    getTodayTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTodayTotal'),
+    getTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTotal')
+  },
+  
   // ==================== Migration ====================
   migrate: (localStorageData) => ipcRenderer.invoke('db:migrate', localStorageData)
 });

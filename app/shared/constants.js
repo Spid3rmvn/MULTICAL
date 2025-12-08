@@ -11,7 +11,7 @@ module.exports = {
 
   // Application
   APP: {
-    NAME: 'MULTICAL',
+    NAME: 'MULTIPRINTS',
     VERSION: '1.0.0'
   },
 
@@ -28,7 +28,7 @@ module.exports = {
 
   // Storage Keys
   STORAGE_KEYS: {
-    SETTINGS: 'multical-settings',
-    THEME: 'multical-theme'
+    SETTINGS: 'multiprints-settings',
+    THEME: 'multiprints-theme'
   }
 };

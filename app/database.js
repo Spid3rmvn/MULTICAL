@@ -19,7 +19,7 @@ class DatabaseManager {
   init() {
     // Get the user data path for storing the database
     const userDataPath = app.getPath('userData');
-    const dbPath = path.join(userDataPath, 'multical.db');
+    const dbPath = path.join(userDataPath, 'multiprints.db');
     
     console.log('Database path:', dbPath);
     
@@ -105,6 +105,37 @@ class DatabaseManager {
         status TEXT NOT NULL DEFAULT 'pending',
         paid_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Services table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL DEFAULT 0,
+        unit TEXT,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Service transactions table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS service_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        service_id INTEGER,
+        service_name TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        price REAL NOT NULL DEFAULT 0,
+        amount REAL NOT NULL DEFAULT 0,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        customer_name TEXT DEFAULT 'Walk-in',
+        notes TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
       )
     `);
 
@@ -274,6 +305,94 @@ class DatabaseManager {
       AND due_date IS NOT NULL 
       AND DATE(due_date) < DATE('now')
     `).all();
+  }
+
+  // ==================== Services CRUD ====================
+
+  getAllServices() {
+    return this.db.prepare('SELECT * FROM services ORDER BY created_at DESC').all();
+  }
+
+  getActiveServices() {
+    return this.db.prepare('SELECT * FROM services WHERE is_active = 1 ORDER BY name').all();
+  }
+
+  getService(id) {
+    return this.db.prepare('SELECT * FROM services WHERE id = ?').get(id);
+  }
+
+  addService(service) {
+    const stmt = this.db.prepare(`
+      INSERT INTO services (name, description, price, unit, is_active)
+      VALUES (@name, @description, @price, @unit, @is_active)
+    `);
+    const result = stmt.run({
+      name: service.name,
+      description: service.description || null,
+      price: service.price || 0,
+      unit: service.unit || null,
+      is_active: service.is_active !== undefined ? service.is_active : 1
+    });
+    return { ...service, id: result.lastInsertRowid, created_at: new Date().toISOString() };
+  }
+
+  updateService(id, updates) {
+    const fields = Object.keys(updates).map(key => `${key} = @${key}`).join(', ');
+    const stmt = this.db.prepare(`UPDATE services SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = @id`);
+    stmt.run({ ...updates, id });
+  }
+
+  deleteService(id) {
+    this.db.prepare('DELETE FROM services WHERE id = ?').run(id);
+  }
+
+  // ==================== Service Transactions CRUD ====================
+
+  getAllServiceTransactions() {
+    return this.db.prepare('SELECT * FROM service_transactions ORDER BY timestamp DESC').all();
+  }
+
+  getTodayServiceTransactions() {
+    return this.db.prepare(`
+      SELECT * FROM service_transactions 
+      WHERE DATE(timestamp) = DATE('now', 'localtime')
+      ORDER BY timestamp DESC
+    `).all();
+  }
+
+  addServiceTransaction(transaction) {
+    const stmt = this.db.prepare(`
+      INSERT INTO service_transactions (service_id, service_name, quantity, price, amount, payment_method, customer_name, notes)
+      VALUES (@service_id, @service_name, @quantity, @price, @amount, @payment_method, @customer_name, @notes)
+    `);
+    const result = stmt.run({
+      service_id: transaction.service_id || null,
+      service_name: transaction.service_name,
+      quantity: transaction.quantity || 1,
+      price: transaction.price || 0,
+      amount: transaction.amount || 0,
+      payment_method: transaction.payment_method || 'cash',
+      customer_name: transaction.customer_name || 'Walk-in',
+      notes: transaction.notes || null
+    });
+    return { ...transaction, id: result.lastInsertRowid, timestamp: new Date().toISOString() };
+  }
+
+  getTodayTotalServiceEarnings() {
+    const result = this.db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as total 
+      FROM service_transactions 
+      WHERE DATE(timestamp) = DATE('now', 'localtime')
+    `).get();
+    return result.total;
+  }
+
+  getTotalServiceEarnings() {
+    const result = this.db.prepare(`
+      SELECT COALESCE(SUM(amount), 0) as total 
+      FROM service_transactions
+    `).get();
+    return result.total;
   }
 
   // ==================== Migration from localStorage ====================

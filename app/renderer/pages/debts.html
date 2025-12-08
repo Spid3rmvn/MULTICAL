@@ -2,13 +2,22 @@
 <div id="page-debts" class="page-content animate-fade-in">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Debts Management</h1>
-        <button id="btn-add-debt"
-            class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add Debt
-        </button>
+        <div class="flex gap-3">
+            <button id="btn-calendar-view"
+                class="flex items-center gap-2 btn-secondary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Calendar View
+            </button>
+            <button id="btn-add-debt"
+                class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Debt
+            </button>
+        </div>
     </div>
 
     <!-- Debt Summary Cards -->
@@ -78,7 +87,16 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-                            <input type="date" name="due_date" class="w-full">
+                            <div class="relative">
+                                <input type="text" id="due-date-display" readonly
+                                    class="w-full cursor-pointer" placeholder="Select due date">
+                                <input type="hidden" name="due_date" id="due-date-value">
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -93,6 +111,124 @@
                     <button type="submit" class="btn-primary px-4 py-2 rounded-lg shadow-sm">Save Debt</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="modal-calendar" class="modal-overlay">
+        <div class="modal-container" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Debts Calendar</h3>
+                <button class="modal-close-btn" id="btn-close-calendar-modal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Calendar Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <button id="btn-prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h4 class="text-lg font-semibold text-gray-900" id="calendar-month-year">January 2024</h4>
+                    <button id="btn-next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Day headers -->
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+                    <!-- Days will be dynamically generated here -->
+                </div>
+
+                <!-- Legend -->
+                <div class="flex items-center gap-6 mt-6 pt-4 border-t border-gray-200">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Overdue</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Due Soon</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Upcoming</span>
+                    </div>
+                </div>
+
+                <!-- Selected Day Details -->
+                <div id="selected-day-details" class="mt-6 hidden">
+                    <h5 class="font-medium text-gray-900 mb-3" id="selected-day-title">Debts for Selected Day</h5>
+                    <div id="selected-day-debts" class="space-y-2">
+                        <!-- Debt items for selected day will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Picker Modal -->
+    <div id="modal-date-picker" class="modal-overlay">
+        <div class="modal-container" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Select Due Date</h3>
+                <button class="modal-close-btn" id="btn-close-date-picker">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Calendar Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <button id="btn-picker-prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h4 class="text-lg font-semibold text-gray-900" id="picker-month-year">January 2024</h4>
+                    <button id="btn-picker-next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid" id="picker-calendar-grid">
+                    <!-- Day headers -->
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+                    <!-- Days will be dynamically generated here -->
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                    <button type="button" id="btn-clear-date" class="btn-secondary px-4 py-2 rounded-lg">Clear</button>
+                    <button type="button" id="btn-today-date" class="btn-primary px-4 py-2 rounded-lg">Today</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

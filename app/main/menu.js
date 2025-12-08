@@ -67,7 +67,7 @@ function createMenu(mainWindow) {
         {
           label: 'Documentation',
           click: () => {
-            shell.openExternal('https://github.com/your-repo/multical');
+            shell.openExternal('https://github.com/your-repo/multiprints');
           }
         },
         {
@@ -83,7 +83,7 @@ function createMenu(mainWindow) {
   // macOS specific menu adjustments
   if (process.platform === 'darwin') {
     template.unshift({
-      label: 'MULTICAL',
+      label: 'MULTIPRINTS',
       submenu: [
         { role: 'about' },
         { type: 'separator' },

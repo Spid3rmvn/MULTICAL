@@ -1,6 +1,6 @@
-# MULTICAL
+# MULTIPRINTS
 
-A modern offline desktop inventory and sales management application built with **Electron.js** and **SQLite**. MULTICAL provides a complete business management solution for tracking products, stock (sticker rolls), sales, and customer debts with an intuitive dashboard interface.
+A modern offline desktop inventory and sales management application built with **Electron.js** and **SQLite**. MULTIPRINTS provides a complete business management solution for tracking products, stock (sticker rolls), sales, and customer debts with an intuitive dashboard interface.
 
 ## Features
 
@@ -8,6 +8,7 @@ A modern offline desktop inventory and sales management application built with *
 - **Product Management**: Track Life Savers and Chevrons with customizable colors, sizes, and pricing
 - **Stock Management**: Manage sticker rolls inventory with color variants, sizes, and usage tracking
 - **Sales Tracking**: Record product and sticker sales with payment methods and customer information
+- **Services Management**: Add printing services (e.g., A4 printing, laminating) and track service earnings
 - **Debt Management**: Track customer debts with due dates, payment status, and overdue alerts
 - **Notifications**: Real-time alerts for overdue debts and important updates
 - **Analytics**: Visual revenue analytics with Chart.js integration
@@ -46,7 +47,7 @@ A modern offline desktop inventory and sales management application built with *
 ## Project Structure
 
 ```
-MULTICAL/
+MULTIPRINTS/
 └── app/
     ├── main/                    # Electron main process
     │   ├── handlers/
@@ -109,9 +110,9 @@ npm start
 ### 3. Database
 
 The SQLite database is automatically created at first launch in the user data directory:
-- **Linux**: `~/.config/multical/multical.db`
-- **macOS**: `~/Library/Application Support/multical/multical.db`
-- **Windows**: `%APPDATA%/multical/multical.db`
+- **Linux**: `~/.config/multiprints/multiprints.db`
+- **macOS**: `~/Library/Application Support/multiprints/multiprints.db`
+- **Windows**: `%APPDATA%/multiprints/multiprints.db`
 
 ## Database Schema
 
@@ -175,6 +176,36 @@ Tracks customer debts.
 | paid_at | DATETIME | Payment timestamp |
 | created_at | DATETIME | Record creation time |
 
+### Services Table
+Manages available printing services.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER | Primary key |
+| name | TEXT | Service name |
+| description | TEXT | Service description |
+| price | REAL | Price per unit |
+| unit | TEXT | Unit of measurement |
+| is_active | INTEGER | Active status (1/0) |
+| created_at | DATETIME | Record creation time |
+| updated_at | DATETIME | Last update time |
+
+### Service Transactions Table
+Records all service transactions.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER | Primary key |
+| service_id | INTEGER | FK to services |
+| service_name | TEXT | Service name snapshot |
+| quantity | REAL | Quantity of service |
+| price | REAL | Price per unit |
+| amount | REAL | Total amount |
+| payment_method | TEXT | cash, mpesa, card |
+| customer_name | TEXT | Customer name |
+| notes | TEXT | Transaction notes |
+| timestamp | DATETIME | Transaction timestamp |
+
 ## IPC API
 
 The application uses Electron's IPC for secure communication between main and renderer processes.
@@ -208,6 +239,21 @@ await window.db.debts.add(debt)
 await window.db.debts.markPaid(id)
 await window.db.debts.getTotalOutstanding()
 await window.db.debts.getOverdue()
+
+// Services
+await window.db.services.getAll()
+await window.db.services.getActive()
+await window.db.services.get(id)
+await window.db.services.add(service)
+await window.db.services.update(id, updates)
+await window.db.services.delete(id)
+
+// Service Transactions
+await window.db.serviceTransactions.getAll()
+await window.db.serviceTransactions.getToday()
+await window.db.serviceTransactions.add(transaction)
+await window.db.serviceTransactions.getTodayTotal()
+await window.db.serviceTransactions.getTotal()
 ```
 
 ### Utility APIs

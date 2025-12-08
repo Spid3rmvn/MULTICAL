@@ -8,7 +8,7 @@ module.exports = {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'MULTICAL',
+    title: 'MULTIPRINTS',
     // Window behavior
     show: false, // Show when ready
     center: true,
