@@ -5,6 +5,7 @@
 const SettingsPage = {
   currentTab: 'general',
   dropdowns: {},
+  isInitializing: true, // Flag to prevent toast spam during initialization
   settings: {
     currency: 'KES',
     currencySymbol: 'KSh',
@@ -30,6 +31,8 @@ const SettingsPage = {
     this.bindEvents();
     this.loadAppVersion();
     this.loadPlatformInfo();
+    // Mark initialization as complete - toasts will now be shown
+    this.isInitializing = false;
   },
 
   initializeDropdowns() {
@@ -241,10 +244,15 @@ const SettingsPage = {
   saveSettings() {
     try {
       localStorage.setItem('app_settings', JSON.stringify(this.settings));
-      Toast.success('Settings Saved', 'Your preferences have been updated');
+      // Only show toast after initialization is complete
+      if (!this.isInitializing) {
+        Toast.success('Settings Saved', 'Your preferences have been updated');
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
-      Toast.error('Save Failed', 'Could not save settings');
+      if (!this.isInitializing) {
+        Toast.error('Save Failed', 'Could not save settings');
+      }
     }
   },
 

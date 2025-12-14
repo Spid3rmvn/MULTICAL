@@ -481,7 +481,7 @@ const SalesPage = {
 
   // ==================== Product Sale Functions ====================
 
-  handleSubmit(formData) {
+  async handleSubmit(formData) {
     const productId = parseInt(formData.get('product_id'));
     const quantity = parseInt(formData.get('quantity'));
     const totalPrice = parseFloat(formData.get('total_price')) || 0;
@@ -505,8 +505,8 @@ const SalesPage = {
     const paymentMethod = formData.get('payment_method');
     const customerName = formData.get('customer_name') || 'Walk-in';
 
-    // Create sale
-    const sale = Store.addSale({
+    // Create sale (await to ensure data is updated)
+    await Store.addSale({
       type: 'product',
       product_id: productId,
       product_name: product.name,
@@ -518,7 +518,7 @@ const SalesPage = {
     });
 
     // Update stock
-    Store.updateProduct(productId, { stock: product.stock - quantity });
+    await Store.updateProduct(productId, { stock: product.stock - quantity });
 
     // Update product dropdown
     this.updateProductDropdownItems();
