@@ -39,10 +39,62 @@ A modern offline desktop inventory and sales management application built with *
              multical.db
 ```
 
-## Prerequisites
+## Installation
+
+### Download Pre-built Installers
+
+Download the latest release for your operating system from the [Releases](https://github.com/codegoddy/MULTICAL/releases) page:
+
+| Platform | Installer | Notes |
+|----------|-----------|-------|
+| **Windows** | `.exe` (NSIS installer) | Full installer with shortcuts |
+| **Windows** | `portable.exe` | No installation needed |
+| **macOS** | `.dmg` | Intel and Apple Silicon |
+| **Linux** | `.AppImage` | Universal Linux binary |
+| **Linux** | `.deb` | Debian/Ubuntu |
+| **Linux** | `.rpm` | Fedora/RHEL |
+
+### Build From Source
+
+#### Prerequisites
 
 - **Node.js** >= 18.x
 - **npm** or **yarn**
+
+#### Build Steps
+
+```bash
+# Clone the repository
+git clone https://github.com/codegoddy/MULTICAL.git
+cd MULTICAL/app
+
+# Install dependencies
+npm install
+
+# Build for your platform
+npm run build          # Current platform
+npm run build:win      # Windows
+npm run build:mac      # macOS  
+npm run build:linux    # Linux
+npm run build:all      # All platforms (requires appropriate OS or CI)
+```
+
+Built installers will be in the `app/dist/` directory.
+
+### Creating a Release
+
+To create a new release with automated builds:
+
+```bash
+# Update version in package.json (automatically creates git tag)
+cd app
+npm version patch  # or minor, major
+
+# Push the tag to trigger the GitHub Actions release workflow
+git push origin --tags
+```
+
+The GitHub Actions workflow will automatically build installers for all platforms and create a release.
 
 ## Project Structure
 

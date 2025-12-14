@@ -42,6 +42,14 @@ yarn-error.log*
 out/
 dist-electron/
 release/
+dist/
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.exe
+*.snap
+*.blockmap
 
 # =========================
 # SQLite Database
