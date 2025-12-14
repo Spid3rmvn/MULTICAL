@@ -169,7 +169,7 @@ const DashboardPage = {
     const tbody = document.getElementById('dashboard-recent-sales-table');
     if (!tbody) return;
 
-    const recentSales = [...Store.sales].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    const recentSales = [...Store.sales].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
 
     if (recentSales.length === 0) {
       tbody.innerHTML = `
@@ -183,15 +183,15 @@ const DashboardPage = {
     }
 
     tbody.innerHTML = recentSales.map(sale => {
-        const product = Store.products.find(p => p.id === sale.productId);
-        const productName = product ? product.name : 'Unknown Product';
-        const date = new Date(sale.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const product = Store.products.find(p => p.id === sale.product_id);
+        const productName = sale.product_name || (product ? product.name : 'Unknown Product');
+        const date = new Date(sale.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
         
         return `
         <tr class="hover:bg-gray-50 transition-colors">
             <td class="font-medium text-gray-900">${productName}</td>
             <td class="text-gray-500">${date}</td>
-            <td class="font-medium text-gray-900">KSh ${sale.total.toLocaleString()}</td>
+            <td class="font-medium text-gray-900">KSh ${sale.amount.toLocaleString()}</td>
             <td><span class="status-badge status-badge--success">Completed</span></td>
         </tr>
       `;
@@ -205,13 +205,13 @@ const DashboardPage = {
       // Combine sales and debts for activity
       const salesActivity = Store.sales.map(s => ({
           type: 'sale',
-          date: new Date(s.date),
+          date: new Date(s.timestamp),
           data: s
       }));
       
       const debtsActivity = Store.debts.map(d => ({
           type: 'debt',
-          date: new Date(d.date),
+          date: new Date(d.created_at),
           data: d
       }));
 
@@ -230,14 +230,15 @@ const DashboardPage = {
           let content = '';
 
           if (isSale) {
-              const product = Store.products.find(p => p.id === item.data.productId);
+              const product = Store.products.find(p => p.id === item.data.product_id);
+              const productName = item.data.product_name || (product ? product.name : 'Item');
               content = `
-                <p class="text-sm text-gray-900"><span class="font-semibold">New Sale:</span> ${product ? product.name : 'Item'}</p>
-                <p class="text-xs text-gray-500 mt-0.5">Sale of KSh ${item.data.total.toLocaleString()} • ${time}</p>
+                <p class="text-sm text-gray-900"><span class="font-semibold">New Sale:</span> ${productName}</p>
+                <p class="text-xs text-gray-500 mt-0.5">Sale of KSh ${item.data.amount.toLocaleString()} • ${time}</p>
               `;
           } else {
               content = `
-                <p class="text-sm text-gray-900"><span class="font-semibold">Debt Added:</span> ${item.data.customerName}</p>
+                <p class="text-sm text-gray-900"><span class="font-semibold">Debt Added:</span> ${item.data.customer_name}</p>
                 <p class="text-xs text-gray-500 mt-0.5">Amount: KSh ${item.data.amount.toLocaleString()} • ${time}</p>
               `;
           }
@@ -259,8 +260,13 @@ const DashboardPage = {
       // Calculate top products
       const productSales = {};
       Store.sales.forEach(sale => {
-          if (!productSales[sale.productId]) productSales[sale.productId] = 0;
-          productSales[sale.productId] += sale.quantity;
+          // Only count product sales, not stock sales
+          if (sale.product_id && sale.type === 'product') {
+              if (!productSales[sale.product_id]) productSales[sale.product_id] = 0;
+              // Parse quantity - it might be a string like "2" or a number
+              const qty = typeof sale.quantity === 'string' ? parseFloat(sale.quantity) || 1 : (sale.quantity || 1);
+              productSales[sale.product_id] += qty;
+          }
       });
 
       const sortedProducts = Object.entries(productSales)

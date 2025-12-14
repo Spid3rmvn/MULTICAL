@@ -41,23 +41,25 @@ const STICKER_TYPES = {
   }
 };
 
-// Product types configuration (Life Savers and Chevrons)
+// Product types configuration (Life Savers, Chevrons, and Stripes)
 const PRODUCT_TYPES = {
   life_saver: {
     id: 'life_saver',
     name: 'Life Saver',
     description: 'Life saver reflective signs',
-    minSaleQty: 10,
-    saleUnit: 'pack of 10',
     badgeClass: 'bg-green-100 text-green-800'
   },
   chevron: {
     id: 'chevron',
     name: 'Chevron',
     description: 'Chevron reflective signs',
-    minSaleQty: 2,
-    saleUnit: 'pair',
     badgeClass: 'bg-orange-100 text-orange-800'
+  },
+  stripes: {
+    id: 'stripes',
+    name: 'Stripes',
+    description: 'Stripe products',
+    badgeClass: 'bg-blue-100 text-blue-800'
   }
 };
 
@@ -72,6 +74,16 @@ const PRODUCT_COLORS = {
     id: 'yellow_red',
     name: 'Yellow and Red',
     colors: ['#eab308', '#ef4444']
+  },
+  white: {
+    id: 'white',
+    name: 'White',
+    colors: ['#ffffff']
+  },
+  yellow: {
+    id: 'yellow',
+    name: 'Yellow',
+    colors: ['#eab308']
   }
 };
 
@@ -80,6 +92,43 @@ const PRODUCT_SIZES = {
   '1x1': { id: '1x1', name: '1x1' },
   '1x2': { id: '1x2', name: '1x2' }
 };
+
+// Printing service types
+const PRINTING_TYPES = [
+  {
+    id: 'one_way_vision',
+    name: 'One-Way Vision',
+    description: 'One-way vision stickers for windows',
+    unit: 'per sqm'
+  },
+  {
+    id: 'banner',
+    name: 'Banner',
+    description: 'Banner printing',
+    unit: 'per sqm'
+  },
+  {
+    id: 'satin',
+    name: 'Satin',
+    description: 'Satin material printing',
+    unit: 'per sqm'
+  },
+  {
+    id: 'reflective',
+    name: 'Reflective',
+    description: 'Reflective sticker printing',
+    unit: 'per sqm'
+  }
+];
+
+// Material types for printing materials (non-stickers)
+const MATERIAL_TYPES = [
+  { id: 'banner', name: 'Banner Vinyl' },
+  { id: 'satin', name: 'Satin Fabric' },
+  { id: 'canvas', name: 'Canvas' },
+  { id: 'backlit', name: 'Backlit Film' },
+  { id: 'mesh', name: 'Mesh Banner' }
+];
 
 const Store = {
   // Currency helper
@@ -95,6 +144,7 @@ const Store = {
   stock: [],
   services: [],
   serviceTransactions: [],
+  printingMaterials: [],
 
   // Initialization flag
   initialized: false,
@@ -106,7 +156,8 @@ const Store = {
     debts: [],
     stock: [],
     services: [],
-    serviceTransactions: []
+    serviceTransactions: [],
+    printingMaterials: []
   },
 
   // ==================== Initialization ====================
@@ -187,8 +238,9 @@ const Store = {
       this.debts = await window.db.debts.getAll();
       this.services = await window.db.services.getAll();
       this.serviceTransactions = await window.db.serviceTransactions.getAll();
+      this.printingMaterials = await window.db.printingMaterials.getAll();
       
-      console.log(`Loaded: ${this.products.length} products, ${this.stock.length} stock, ${this.sales.length} sales, ${this.debts.length} debts, ${this.services.length} services, ${this.serviceTransactions.length} service transactions`);
+      console.log(`Loaded: ${this.products.length} products, ${this.stock.length} stock, ${this.sales.length} sales, ${this.debts.length} debts, ${this.services.length} services, ${this.serviceTransactions.length} service transactions, ${this.printingMaterials.length} printing materials`);
     } catch (error) {
       console.error('Failed to load from database:', error);
     }
@@ -286,6 +338,16 @@ const Store = {
     return this.sales.reduce((sum, s) => sum + s.amount, 0);
   },
 
+  async deleteSale(id) {
+    try {
+      await window.db.sales.delete(id);
+      this.sales = this.sales.filter(s => s.id !== id);
+      this.notify('sales');
+    } catch (error) {
+      console.error('Failed to delete sale:', error);
+    }
+  },
+
   // ==================== Debts CRUD ====================
   
   async addDebt(debt) {
@@ -351,7 +413,10 @@ const Store = {
   },
 
   getTotalOutstanding() {
-    return this.getPendingDebts().reduce((sum, d) => sum + d.amount, 0);
+    return this.getPendingDebts().reduce((sum, d) => {
+      const remaining = d.remaining_amount !== undefined ? d.remaining_amount : d.amount;
+      return sum + remaining;
+    }, 0);
   },
 
   getPaidThisMonth() {
@@ -359,6 +424,48 @@ const Store = {
     return this.debts
       .filter(d => d.status === 'paid' && new Date(d.paid_at).getMonth() === thisMonth)
       .reduce((sum, d) => sum + d.amount, 0);
+  },
+
+  // ==================== Debt Payments CRUD ====================
+
+  async loadDebts() {
+    try {
+      this.debts = await window.db.debts.getAll();
+      this.notify('debts');
+    } catch (error) {
+      console.error('Failed to load debts:', error);
+    }
+  },
+
+  async addDebtPayment(payment) {
+    try {
+      const result = await window.db.debtPayments.add(payment);
+      // Refresh debts to get updated paid_amount and remaining_amount
+      await this.loadDebts();
+      return result;
+    } catch (error) {
+      console.error('Failed to add debt payment:', error);
+      return null;
+    }
+  },
+
+  async getDebtPayments(debtId) {
+    try {
+      return await window.db.debtPayments.getByDebt(debtId);
+    } catch (error) {
+      console.error('Failed to get debt payments:', error);
+      return [];
+    }
+  },
+
+  async deleteDebtPayment(id) {
+    try {
+      await window.db.debtPayments.delete(id);
+      // Refresh debts to get updated paid_amount and remaining_amount
+      await this.loadDebts();
+    } catch (error) {
+      console.error('Failed to delete debt payment:', error);
+    }
   },
 
   // ==================== Stock CRUD ====================
@@ -369,11 +476,19 @@ const Store = {
       stockItem.size = stockItem.size || '1';
       stockItem.sticker_type = stockItem.sticker_type || 'colored';
       
-      // Calculate metres per roll based on size
+      // Calculate total metres based on sticker type
       const baseMetresPerRoll = STOCK_CONFIG.sticker.metresPerRoll;
-      const sizeMultiplier = parseFloat(stockItem.size);
-      stockItem.metres_per_roll = baseMetresPerRoll * sizeMultiplier;
-      stockItem.total_metres = stockItem.rolls * stockItem.metres_per_roll;
+      
+      if (stockItem.sticker_type === 'reflective' && stockItem.custom_metres_per_roll) {
+        // For reflective with custom metres per roll
+        stockItem.metres_per_roll = stockItem.custom_metres_per_roll;
+        stockItem.total_metres = stockItem.rolls * stockItem.custom_metres_per_roll;
+      } else {
+        // For colored and clear stickers, use standard calculation: rolls × 50
+        stockItem.metres_per_roll = baseMetresPerRoll;
+        stockItem.total_metres = stockItem.rolls * baseMetresPerRoll;
+      }
+      
       stockItem.metres_used = 0;
       
       const result = await window.db.stock.add(stockItem);
@@ -497,6 +612,24 @@ const Store = {
     return this.stock.find(s => s.id === id);
   },
 
+  async addRollsToStockWithCustomMetres(id, additionalRolls, metresPerRoll) {
+    const item = this.stock.find(s => s.id === id);
+    if (!item) return null;
+    
+    const newRolls = item.rolls + additionalRolls;
+    const additionalMetres = additionalRolls * metresPerRoll;
+    const newTotalMetres = item.total_metres + additionalMetres;
+    // Recalculate average metres per roll
+    const newMetresPerRoll = newTotalMetres / newRolls;
+    
+    await this.updateStock(id, { 
+      rolls: newRolls, 
+      total_metres: newTotalMetres,
+      metres_per_roll: newMetresPerRoll
+    });
+    return this.stock.find(s => s.id === id);
+  },
+
   getStockSummary() {
     return {
       totalItems: this.stock.length,
@@ -558,8 +691,31 @@ const Store = {
   
   async addServiceTransaction(transaction) {
     try {
+      // If this transaction uses stock, validate and deduct
+      if (transaction.stock_id && transaction.stock_metres_used) {
+        const stockItem = this.stock.find(s => s.id === transaction.stock_id);
+        if (!stockItem) {
+          return { success: false, error: 'Stock item not found' };
+        }
+        
+        const remaining = stockItem.total_metres - stockItem.metres_used;
+        if (transaction.stock_metres_used > remaining) {
+          return { success: false, error: `Insufficient stock. Only ${remaining}m available.` };
+        }
+      }
+      
       const result = await window.db.serviceTransactions.add(transaction);
       this.serviceTransactions.unshift(result);
+      
+      // Update local stock cache if stock was used
+      if (transaction.stock_id && transaction.stock_metres_used) {
+        const stockIndex = this.stock.findIndex(s => s.id === transaction.stock_id);
+        if (stockIndex !== -1) {
+          this.stock[stockIndex].metres_used += transaction.stock_metres_used;
+          this.notify('stock');
+        }
+      }
+      
       this.notify('serviceTransactions');
       return result;
     } catch (error) {
@@ -579,6 +735,100 @@ const Store = {
 
   getTotalServiceEarnings() {
     return this.serviceTransactions.reduce((sum, t) => sum + t.amount, 0);
+  },
+
+  async deleteServiceTransaction(id) {
+    try {
+      await window.db.serviceTransactions.delete(id);
+      this.serviceTransactions = this.serviceTransactions.filter(t => t.id !== id);
+      this.notify('serviceTransactions');
+    } catch (error) {
+      console.error('Failed to delete service transaction:', error);
+    }
+  },
+
+  // ==================== Printing Materials CRUD ====================
+  
+  async addPrintingMaterial(material) {
+    try {
+      // Calculate total metres: rolls × metres_per_roll
+      material.total_metres = material.rolls * material.metres_per_roll;
+      material.metres_used = 0;
+      
+      const result = await window.db.printingMaterials.add(material);
+      this.printingMaterials.unshift(result);
+      this.notify('printingMaterials');
+      return result;
+    } catch (error) {
+      console.error('Failed to add printing material:', error);
+      return null;
+    }
+  },
+
+  async updatePrintingMaterial(id, updates) {
+    try {
+      // Handle rolls update
+      if (updates.rolls !== undefined) {
+        const item = this.printingMaterials.find(m => m.id === id);
+        if (item) {
+          // Recalculate total metres using rolls × metres_per_roll
+          updates.total_metres = updates.rolls * item.metres_per_roll;
+        }
+      }
+      
+      await window.db.printingMaterials.update(id, updates);
+      const index = this.printingMaterials.findIndex(m => m.id === id);
+      if (index !== -1) {
+        this.printingMaterials[index] = { ...this.printingMaterials[index], ...updates };
+      }
+      this.notify('printingMaterials');
+      return this.printingMaterials[index];
+    } catch (error) {
+      console.error('Failed to update printing material:', error);
+      return null;
+    }
+  },
+
+  async deletePrintingMaterial(id) {
+    try {
+      await window.db.printingMaterials.delete(id);
+      this.printingMaterials = this.printingMaterials.filter(m => m.id !== id);
+      this.notify('printingMaterials');
+    } catch (error) {
+      console.error('Failed to delete printing material:', error);
+    }
+  },
+
+  getPrintingMaterial(id) {
+    return this.printingMaterials.find(m => m.id === id);
+  },
+
+  getAvailablePrintingMaterials() {
+    return this.printingMaterials
+      .filter(m => (m.total_metres - m.metres_used) > 0)
+      .map(m => ({
+        id: m.id,
+        name: m.name,
+        material_type: m.material_type,
+        width: m.width,
+        color: m.color,
+        remaining: m.total_metres - m.metres_used
+      }));
+  },
+
+  async deductPrintingMaterial(id, metres) {
+    const item = this.printingMaterials.find(m => m.id === id);
+    if (!item) return { success: false, error: 'Material not found' };
+    
+    const remaining = item.total_metres - item.metres_used;
+    if (metres > remaining) {
+      return { success: false, error: `Insufficient material. Only ${remaining}m available.` };
+    }
+    
+    const newMetresUsed = item.metres_used + metres;
+    await this.updatePrintingMaterial(id, { metres_used: newMetresUsed });
+    
+    return { success: true, remaining: remaining - metres };
   }
 };
 
@@ -590,6 +840,8 @@ window.STICKER_TYPES = STICKER_TYPES;
 window.PRODUCT_TYPES = PRODUCT_TYPES;
 window.PRODUCT_COLORS = PRODUCT_COLORS;
 window.PRODUCT_SIZES = PRODUCT_SIZES;
+window.PRINTING_TYPES = PRINTING_TYPES;
+window.MATERIAL_TYPES = MATERIAL_TYPES;
 
 // Initialize Store when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

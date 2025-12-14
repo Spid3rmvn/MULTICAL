@@ -9,8 +9,11 @@ const DebtsPage = {
   pickerMonth: new Date().getMonth(),
   pickerYear: new Date().getFullYear(),
   pickerSelectedDate: null,
+  paymentMethodDropdown: null,
+  currentDebtId: null,
 
   init() {
+    this.initPaymentDropdown();
     this.bindEvents();
     this.render();
     this.updateSummary();
@@ -27,15 +30,45 @@ const DebtsPage = {
     });
   },
 
+  initPaymentDropdown() {
+    const paymentContainer = document.getElementById('payment-method-dropdown');
+    if (paymentContainer) {
+      this.paymentMethodDropdown = new CustomDropdown(paymentContainer, {
+        placeholder: 'Cash',
+        items: [
+          { value: 'cash', label: 'Cash' },
+          { value: 'mpesa', label: 'M-Pesa' },
+          { value: 'till', label: 'Till Number' }
+        ],
+        onSelect: (selected) => {
+          const hiddenInput = document.getElementById('payment-method-input');
+          if (hiddenInput) hiddenInput.value = selected.value;
+        }
+      });
+      // Auto-select first item
+      this.paymentMethodDropdown.selectItem(paymentContainer.querySelector('.dropdown-item'));
+    }
+  },
+
   bindEvents() {
     const modal = document.getElementById('modal-add-debt');
     const calendarModal = document.getElementById('modal-calendar');
     const datePickerModal = document.getElementById('modal-date-picker');
+    const paymentModal = document.getElementById('modal-record-payment');
+    const historyModal = document.getElementById('modal-payment-history');
 
     const btnAdd = document.getElementById('btn-add-debt');
     const btnClose = document.getElementById('btn-close-debt-modal');
     const btnCancel = document.getElementById('btn-cancel-debt');
     const addForm = document.getElementById('add-debt-form');
+
+    // Payment modal elements
+    const btnClosePayment = document.getElementById('btn-close-payment-modal');
+    const btnCancelPayment = document.getElementById('btn-cancel-payment');
+    const paymentForm = document.getElementById('record-payment-form');
+
+    // History modal elements
+    const btnCloseHistory = document.getElementById('btn-close-history-modal');
 
     // Calendar button
     const btnCalendar = document.getElementById('btn-calendar-view');
@@ -90,6 +123,48 @@ const DebtsPage = {
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
     if (btnCloseCalendar) btnCloseCalendar.addEventListener('click', closeCalendarModal);
+
+    // Payment modal close handlers
+    const closePaymentModal = () => {
+      if (paymentModal) {
+        paymentModal.classList.remove('open');
+        paymentForm?.reset();
+        this.paymentMethodDropdown?.reset();
+        const container = document.getElementById('payment-method-dropdown');
+        if (container) this.paymentMethodDropdown?.selectItem(container.querySelector('.dropdown-item'));
+      }
+    };
+
+    const closeHistoryModal = () => {
+      if (historyModal) {
+        historyModal.classList.remove('open');
+      }
+    };
+
+    if (btnClosePayment) btnClosePayment.addEventListener('click', closePaymentModal);
+    if (btnCancelPayment) btnCancelPayment.addEventListener('click', closePaymentModal);
+    if (btnCloseHistory) btnCloseHistory.addEventListener('click', closeHistoryModal);
+
+    if (paymentModal) {
+      paymentModal.addEventListener('click', (e) => {
+        if (e.target === paymentModal) closePaymentModal();
+      });
+    }
+
+    if (historyModal) {
+      historyModal.addEventListener('click', (e) => {
+        if (e.target === historyModal) closeHistoryModal();
+      });
+    }
+
+    // Payment form submit
+    if (paymentForm) {
+      paymentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.handlePaymentSubmit(new FormData(paymentForm));
+        closePaymentModal();
+      });
+    }
 
     // Month Navigation
     if (btnPrevMonth) {
@@ -224,7 +299,7 @@ const DebtsPage = {
     if (pendingDebts.length === 0) {
       tbody.innerHTML = `
         <tr class="text-center">
-            <td colspan="6" class="px-5 py-8 text-gray-500">
+            <td colspan="8" class="px-5 py-8 text-gray-500">
                 <div class="flex flex-col items-center justify-center">
                     <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -239,22 +314,44 @@ const DebtsPage = {
 
     tbody.innerHTML = pendingDebts.map(debt => {
       const isOverdue = debt.due_date && new Date(debt.due_date) < new Date();
+      const paidAmount = debt.paid_amount || 0;
+      const remainingAmount = debt.remaining_amount || debt.amount;
+      const hasPayments = paidAmount > 0;
+      
       return `
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="px-5 py-4 text-sm font-medium text-gray-900">${debt.customer_name}</td>
           <td class="px-5 py-4 text-sm text-gray-600">${debt.phone || '-'}</td>
-          <td class="px-5 py-4 text-sm font-medium text-red-600">KSh ${debt.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          <td class="px-5 py-4 text-sm font-medium text-gray-900">KSh ${debt.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          <td class="px-5 py-4 text-sm font-medium text-green-600">KSh ${paidAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          <td class="px-5 py-4 text-sm font-medium text-red-600">KSh ${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
           <td class="px-5 py-4 text-sm text-gray-600">${debt.due_date || '-'}</td>
           <td class="px-5 py-4">
             <span class="status-badge ${isOverdue ? 'status-badge--error' : 'status-badge--pending'}">${isOverdue ? 'Overdue' : 'Pending'}</span>
           </td>
-          <td class="px-5 py-4 flex gap-2">
-            <button onclick="DebtsPage.markPaid(${debt.id})" class="text-green-600 hover:text-green-800 text-sm font-medium">Mark Paid</button>
-            <button onclick="DebtsPage.delete(${debt.id})" class="text-gray-400 hover:text-red-600 transition-colors">
-                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-2">
+              <button onclick="DebtsPage.recordPayment(${debt.id})" 
+                class="text-sm font-medium px-3 py-1 rounded-md ${hasPayments ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} transition-colors"
+                title="Record payment">
+                ${hasPayments ? 'Add Payment' : 'Pay'}
+              </button>
+              ${hasPayments ? `
+                <button onclick="DebtsPage.viewPaymentHistory(${debt.id})" 
+                  class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  title="View payment history">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </button>
+              ` : ''}
+              <button onclick="DebtsPage.delete(${debt.id})" class="text-gray-400 hover:text-red-600 transition-colors"
+                title="Delete debt">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
-            </button>
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -291,6 +388,168 @@ const DebtsPage = {
       onConfirm: () => {
         Store.deleteDebt(id);
         Toast.success('Debt Deleted', `Debt record for ${debt.customer_name} has been removed`);
+      }
+    });
+  },
+
+  recordPayment(debtId) {
+    const debt = Store.debts.find(d => d.id === debtId);
+    if (!debt) return;
+
+    this.currentDebtId = debtId;
+    const paidAmount = debt.paid_amount || 0;
+    const remainingAmount = debt.remaining_amount || debt.amount;
+
+    // Update modal with debt info
+    document.getElementById('payment-customer-name').textContent = debt.customer_name;
+    document.getElementById('payment-total-amount').textContent = `KSh ${debt.amount.toLocaleString()}`;
+    document.getElementById('payment-paid-amount').textContent = `KSh ${paidAmount.toLocaleString()}`;
+    document.getElementById('payment-remaining-amount').textContent = `KSh ${remainingAmount.toLocaleString()}`;
+    document.getElementById('payment-debt-id').value = debtId;
+    
+    // Set max payment amount to remaining amount
+    const amountInput = document.getElementById('payment-amount');
+    if (amountInput) {
+      amountInput.max = remainingAmount;
+      amountInput.value = remainingAmount; // Default to full remaining amount
+    }
+
+    // Open modal
+    const modal = document.getElementById('modal-record-payment');
+    if (modal) modal.classList.add('open');
+  },
+
+  async handlePaymentSubmit(formData) {
+    const debtId = parseInt(formData.get('debt_id'));
+    const amount = parseFloat(formData.get('amount'));
+    const paymentMethod = formData.get('payment_method');
+    const notes = formData.get('notes');
+
+    const debt = Store.debts.find(d => d.id === debtId);
+    if (!debt) return;
+
+    const remainingAmount = debt.remaining_amount || debt.amount;
+    
+    // Validate payment amount
+    if (amount <= 0) {
+      Toast.error('Invalid Amount', 'Payment amount must be greater than 0');
+      return;
+    }
+
+    if (amount > remainingAmount) {
+      Toast.error('Amount Exceeds Debt', `Payment cannot exceed remaining amount of KSh ${remainingAmount.toLocaleString()}`);
+      return;
+    }
+
+    const payment = {
+      debt_id: debtId,
+      amount: amount,
+      payment_method: paymentMethod,
+      notes: notes
+    };
+
+    await Store.addDebtPayment(payment);
+    
+    const newRemaining = remainingAmount - amount;
+    if (newRemaining <= 0) {
+      Toast.success('Debt Fully Paid!', `${debt.customer_name} has paid the full debt of KSh ${debt.amount.toLocaleString()}`);
+    } else {
+      Toast.success('Payment Recorded', `KSh ${amount.toLocaleString()} paid • KSh ${newRemaining.toLocaleString()} remaining`);
+    }
+  },
+
+  viewPaymentHistory(debtId) {
+    const debt = Store.debts.find(d => d.id === debtId);
+    if (!debt) return;
+
+    this.currentDebtId = debtId;
+    const paidAmount = debt.paid_amount || 0;
+    const remainingAmount = debt.remaining_amount || debt.amount;
+
+    // Update modal with debt info
+    document.getElementById('history-customer-name').textContent = debt.customer_name;
+    document.getElementById('history-total-amount').textContent = `KSh ${debt.amount.toLocaleString()}`;
+    document.getElementById('history-paid-amount').textContent = `KSh ${paidAmount.toLocaleString()}`;
+    document.getElementById('history-remaining-amount').textContent = `KSh ${remainingAmount.toLocaleString()}`;
+
+    // Load payment history
+    this.renderPaymentHistory(debtId);
+
+    // Open modal
+    const modal = document.getElementById('modal-payment-history');
+    if (modal) modal.classList.add('open');
+  },
+
+  async renderPaymentHistory(debtId) {
+    const tbody = document.getElementById('payment-history-body');
+    if (!tbody) return;
+
+    const payments = await Store.getDebtPayments(debtId);
+
+    if (payments.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="px-5 py-8 text-center text-gray-500">No payments recorded yet.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = payments.map(payment => {
+      const paymentDate = new Date(payment.payment_date);
+      const isToday = paymentDate.toDateString() === new Date().toDateString();
+      
+      // Show time if today, show date + time if older
+      const timeDisplay = isToday 
+        ? paymentDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})
+        : paymentDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) + ' ' + 
+          paymentDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+      
+      const paymentLabel = payment.payment_method === 'mpesa' ? 'M-Pesa' : 
+                           payment.payment_method === 'till' ? 'Till Number' : 'Cash';
+      
+      return `
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-5 py-4 text-sm text-gray-600">${timeDisplay}</td>
+          <td class="px-5 py-4 text-sm font-medium text-green-600">KSh ${payment.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+          <td class="px-5 py-4">
+            <span class="status-badge status-badge--success">${paymentLabel}</span>
+          </td>
+          <td class="px-5 py-4">
+            <button onclick="DebtsPage.deletePayment(${payment.id}, ${debtId})" 
+              class="text-gray-400 hover:text-red-600 transition-colors" 
+              title="Delete payment">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  async deletePayment(paymentId, debtId) {
+    ConfirmModal.show({
+      title: 'Delete Payment?',
+      message: 'Are you sure you want to delete this payment record? The debt balance will be adjusted.',
+      itemName: 'Payment Record',
+      itemDetails: 'This will increase the remaining debt amount',
+      onConfirm: async () => {
+        await Store.deleteDebtPayment(paymentId);
+        Toast.success('Payment Deleted', 'Payment record removed and debt balance updated');
+        
+        // Refresh payment history
+        this.renderPaymentHistory(debtId);
+        
+        // Update summary in history modal
+        const debt = Store.debts.find(d => d.id === debtId);
+        if (debt) {
+          const paidAmount = debt.paid_amount || 0;
+          const remainingAmount = debt.remaining_amount || debt.amount;
+          document.getElementById('history-paid-amount').textContent = `KSh ${paidAmount.toLocaleString()}`;
+          document.getElementById('history-remaining-amount').textContent = `KSh ${remainingAmount.toLocaleString()}`;
+        }
       }
     });
   },
@@ -508,8 +767,6 @@ const DebtsPage = {
 
   setPickerDate(date) {
     this.pickerSelectedDate = date;
-    const dueDateValue = document.getElementById('due-date-value');
-    const dueDateDisplay = document.getElementById('due-date-display');
     
     // Format date as YYYY-MM-DD for the hidden input
     const year = date.getFullYear();
@@ -521,8 +778,18 @@ const DebtsPage = {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const formattedDisplay = `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     
-    if (dueDateValue) dueDateValue.value = formattedValue;
-    if (dueDateDisplay) dueDateDisplay.value = formattedDisplay;
+    // Check if this is for the convert debt modal
+    if (this.pickerCallback === 'convertDebt' && window.convertDebtDateCallback) {
+      window.convertDebtDateCallback(formattedValue, formattedDisplay);
+      this.pickerCallback = null;
+    } else {
+      // Normal debt form date picker
+      const dueDateValue = document.getElementById('due-date-value');
+      const dueDateDisplay = document.getElementById('due-date-display');
+      
+      if (dueDateValue) dueDateValue.value = formattedValue;
+      if (dueDateDisplay) dueDateDisplay.value = formattedDisplay;
+    }
     
     this.renderDatePicker();
   }

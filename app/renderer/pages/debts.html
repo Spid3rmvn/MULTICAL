@@ -6,7 +6,9 @@
             <button id="btn-calendar-view"
                 class="flex items-center gap-2 btn-secondary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
                 </svg>
                 Calendar View
             </button>
@@ -43,7 +45,9 @@
                 <tr>
                     <th>Customer</th>
                     <th>Phone</th>
-                    <th>Amount</th>
+                    <th>Total Amount</th>
+                    <th>Paid</th>
+                    <th>Remaining</th>
                     <th>Due Date</th>
                     <th>Status</th>
                     <th>Actions</th>
@@ -51,7 +55,7 @@
             </thead>
             <tbody id="debts-table-body">
                 <tr>
-                    <td colspan="6" class="px-5 py-8 text-center text-gray-500">No debts recorded.</td>
+                    <td colspan="8" class="px-5 py-8 text-center text-gray-500">No debts recorded.</td>
                 </tr>
             </tbody>
         </table>
@@ -88,12 +92,15 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                             <div class="relative">
-                                <input type="text" id="due-date-display" readonly
-                                    class="w-full cursor-pointer" placeholder="Select due date">
+                                <input type="text" id="due-date-display" readonly class="w-full cursor-pointer"
+                                    placeholder="Select due date">
                                 <input type="hidden" name="due_date" id="due-date-value">
                                 <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
                                     </svg>
                                 </div>
                             </div>
@@ -131,13 +138,15 @@
                 <div class="flex items-center justify-between mb-6">
                     <button id="btn-prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
                         </svg>
                     </button>
                     <h4 class="text-lg font-semibold text-gray-900" id="calendar-month-year">January 2024</h4>
                     <button id="btn-next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -199,13 +208,15 @@
                 <div class="flex items-center justify-between mb-6">
                     <button id="btn-picker-prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
                         </svg>
                     </button>
                     <h4 class="text-lg font-semibold text-gray-900" id="picker-month-year">January 2024</h4>
                     <button id="btn-picker-next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                            </path>
                         </svg>
                     </button>
                 </div>
@@ -227,6 +238,134 @@
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                     <button type="button" id="btn-clear-date" class="btn-secondary px-4 py-2 rounded-lg">Clear</button>
                     <button type="button" id="btn-today-date" class="btn-primary px-4 py-2 rounded-lg">Today</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Payment Modal -->
+    <div id="modal-record-payment" class="modal-overlay">
+        <div class="modal-container" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Record Debt Payment</h3>
+                <button class="modal-close-btn" id="btn-close-payment-modal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <form id="record-payment-form">
+                <div class="modal-body">
+                    <!-- Debt Info -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-sm text-gray-500">Customer</p>
+                                <p class="font-semibold text-gray-900" id="payment-customer-name"></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Total Debt</p>
+                                <p class="font-semibold text-gray-900" id="payment-total-amount">KSh 0</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                            <div>
+                                <p class="text-sm text-gray-500">Already Paid</p>
+                                <p class="font-medium text-green-600" id="payment-paid-amount">KSh 0</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Remaining</p>
+                                <p class="font-bold text-red-600" id="payment-remaining-amount">KSh 0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="debt_id" id="payment-debt-id">
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Amount *</label>
+                            <input type="number" name="amount" id="payment-amount" required step="0.01" min="0.01"
+                                class="w-full" placeholder="Enter amount paid">
+                            <p class="text-xs text-gray-500 mt-1">Amount to pay now</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method *</label>
+                            <div id="payment-method-dropdown"></div>
+                            <input type="hidden" name="payment_method" id="payment-method-input" value="cash">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                            <textarea name="notes" rows="2" class="w-full"
+                                placeholder="Optional payment notes"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
+                        id="btn-cancel-payment">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg shadow-sm">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment History Modal -->
+    <div id="modal-payment-history" class="modal-overlay">
+        <div class="modal-container" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Payment History</h3>
+                <button class="modal-close-btn" id="btn-close-history-modal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Debt Summary -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-sm text-gray-500">Customer</p>
+                            <p class="font-semibold text-gray-900" id="history-customer-name"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Total Debt</p>
+                            <p class="font-semibold text-gray-900" id="history-total-amount">KSh 0</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Paid</p>
+                            <p class="font-medium text-green-600" id="history-paid-amount">KSh 0</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-500">Remaining</p>
+                            <p class="font-bold text-red-600" id="history-remaining-amount">KSh 0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment History Table -->
+                <div class="overflow-hidden border border-gray-200 rounded-lg">
+                    <table class="w-full data-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Amount</th>
+                                <th>Payment Method</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-history-body">
+                            <tr>
+                                <td colspan="4" class="px-5 py-8 text-center text-gray-500">No payments recorded yet.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

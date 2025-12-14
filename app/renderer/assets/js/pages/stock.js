@@ -90,7 +90,6 @@ const StockPage = {
     if (container) {
       container.innerHTML = '';
       this.sizeRowIdCounter = 0;
-      this.addSizeRow(); // Add initial row
     }
     const colorInput = document.getElementById('stock-color-input');
     if (colorInput) {
@@ -99,6 +98,10 @@ const StockPage = {
     // Reset sticker type to default
     this.selectedStickerType = 'colored';
     this.updateStickerTypeUI();
+    // Add initial row AFTER updating UI so it uses correct type
+    if (container) {
+      this.addSizeRow();
+    }
     this.updateTotalSummary();
   },
 
@@ -106,10 +109,40 @@ const StockPage = {
     this.selectedStickerType = type;
     const hiddenInput = document.getElementById('sticker-type-input');
     if (hiddenInput) hiddenInput.value = type;
-    this.updateStickerTypeUI();
+    
+    // Update UI elements (buttons, labels) without rebuilding rows
+    this.updateStickerTypeUIOnly();
+    
+    // Only rebuild rows if there's actual data entered (not empty initial row)
+    const container = document.getElementById('size-rows-container');
+    if (container && container.children.length > 0) {
+      const hasData = Array.from(container.querySelectorAll('.size-input, .rolls-input, .metres-per-roll-input'))
+        .some(input => input.value && input.value.trim() !== '');
+      
+      if (hasData) {
+        // User has entered data, rebuild to preserve it
+        this.rebuildSizeRows();
+      } else {
+        // Empty initial row, just clear and add fresh one with new type
+        container.innerHTML = '';
+        this.sizeRowIdCounter = 0;
+        this.addSizeRow();
+        this.updateTotalSummary();
+      }
+    }
   },
 
   updateStickerTypeUI() {
+    this.updateStickerTypeUIOnly();
+    
+    // Only rebuild size rows if there are existing rows (user switched types mid-entry)
+    const container = document.getElementById('size-rows-container');
+    if (container && container.children.length > 0) {
+      this.rebuildSizeRows();
+    }
+  },
+
+  updateStickerTypeUIOnly() {
     const typeButtons = document.querySelectorAll('.sticker-type-btn');
     const colorLabel = document.getElementById('color-label');
     const colorInput = document.getElementById('stock-color-input');
@@ -140,17 +173,59 @@ const StockPage = {
     // Update color label and hint based on type
     if (this.selectedStickerType === 'colored') {
       if (colorLabel) colorLabel.textContent = 'Sticker Color';
-      if (colorInput) colorInput.placeholder = 'e.g. Red, Blue, Gold';
-      if (colorHint) colorHint.textContent = 'Enter a color name for your sticker';
-    } else if (this.selectedStickerType === 'clear') {
-      if (colorLabel) colorLabel.textContent = 'Sticker Name/Variant';
-      if (colorInput) colorInput.placeholder = 'e.g. Matte Clear, Glossy Clear';
-      if (colorHint) colorHint.textContent = 'Enter a name or variant for your clear sticker';
+      if (colorInput) colorInput.placeholder = 'e.g. Red Dark, Black Matt, Blue Medium';
+      if (colorHint) colorHint.textContent = 'Enter color with variant (dark, light, gloss, matt, medium, etc.)';
     } else if (this.selectedStickerType === 'reflective') {
-      if (colorLabel) colorLabel.textContent = 'Sticker Name/Finish';
-      if (colorInput) colorInput.placeholder = 'e.g. Chrome Silver, Gold Mirror';
-      if (colorHint) colorHint.textContent = 'Enter a name or finish type for your reflective sticker';
+      if (colorLabel) colorLabel.textContent = 'Reflective Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red, White, Yellow, Chevron Yellow Red';
+      if (colorHint) colorHint.textContent = 'Enter color (red, white, yellow, chevron yellow red, chevron white red, etc.)';
     }
+  },
+
+  rebuildSizeRows() {
+    const container = document.getElementById('size-rows-container');
+    if (!container) return;
+
+    // Save current values
+    const rows = Array.from(container.querySelectorAll('[data-row-id]'));
+    const rowData = rows.map(row => {
+      return {
+        size: row.querySelector('.size-input')?.value || '',
+        rolls: row.querySelector('.rolls-input')?.value || '',
+        metresPerRoll: row.querySelector('.metres-per-roll-input')?.value || ''
+      };
+    });
+
+    // Clear and rebuild rows
+    container.innerHTML = '';
+    this.sizeRowIdCounter = 0;
+    
+    if (rowData.length === 0) {
+      // Add initial empty row if none existed
+      this.addSizeRow();
+    } else {
+      // Rebuild rows with saved data
+      rowData.forEach((data, index) => {
+        this.addSizeRow();
+        const row = container.children[index];
+        if (row) {
+          const sizeInput = row.querySelector('.size-input');
+          const rollsInput = row.querySelector('.rolls-input');
+          const metresPerRollInput = row.querySelector('.metres-per-roll-input');
+          
+          if (sizeInput && data.size) sizeInput.value = data.size;
+          if (rollsInput && data.rolls) rollsInput.value = data.rolls;
+          if (metresPerRollInput && data.metresPerRoll) metresPerRollInput.value = data.metresPerRoll;
+          
+          // Trigger calculation
+          if (rollsInput && rollsInput.value) {
+            this.updateRowMetres(parseInt(row.dataset.rowId));
+          }
+        }
+      });
+    }
+    
+    this.updateTotalSummary();
   },
 
   addSizeRow() {
@@ -159,42 +234,68 @@ const StockPage = {
 
     const rowId = this.sizeRowIdCounter++;
     const isFirstRow = container.children.length === 0;
+    const isReflective = this.selectedStickerType === 'reflective';
 
     const row = document.createElement('div');
-    row.className = 'flex gap-3 items-start';
+    row.className = 'grid grid-cols-2 gap-4';
     row.dataset.rowId = rowId;
     row.innerHTML = `
-      <div class="flex-1">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Width (inches) ${isFirstRow ? '*' : ''}</label>
         <input type="number" 
                class="w-full size-input" 
                data-row-id="${rowId}"
-               step="0.1" 
-               min="0.1" 
-               placeholder="Size (e.g. 1, 1.2)" 
-               required>
+               step="1" 
+               min="1" 
+               placeholder="Width in inches" 
+               ${isFirstRow ? 'required' : ''}>
       </div>
-      <div class="flex-1">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Rolls ${isFirstRow ? '*' : ''}</label>
         <input type="number" 
                class="w-full rolls-input" 
                data-row-id="${rowId}"
                min="1" 
-               placeholder="Rolls" 
-               required>
+               placeholder="Number of rolls" 
+               ${isFirstRow ? 'required' : ''}>
       </div>
-      <div class="flex-1">
-        <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 text-sm">
-          <span class="metres-display" data-row-id="${rowId}">0</span>m
+      ${isReflective ? `
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Metres per Roll ${isFirstRow ? '*' : ''}</label>
+          <input type="number" 
+                 class="w-full metres-per-roll-input" 
+                 data-row-id="${rowId}"
+                 step="0.1" 
+                 min="1" 
+                 value="50"
+                 placeholder="Metres per roll" 
+                 ${isFirstRow ? 'required' : ''}>
+          <p class="text-xs text-gray-500 mt-1">Length of each roll</p>
         </div>
-      </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
+          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          </div>
+        </div>
+      ` : `
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
+          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Calculated: rolls × 50m</p>
+        </div>
+      `}
       ${!isFirstRow ? `
-        <button type="button" 
-                class="remove-row-btn p-2 text-gray-400 hover:text-red-600 transition-colors" 
-                data-row-id="${rowId}">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      ` : '<div class="w-9"></div>'}
+        <div class="col-span-2 flex justify-end">
+          <button type="button" 
+                  class="remove-row-btn text-sm text-red-600 hover:text-red-800 font-medium" 
+                  data-row-id="${rowId}">
+            Remove this size
+          </button>
+        </div>
+      ` : ''}
     `;
 
     container.appendChild(row);
@@ -202,13 +303,14 @@ const StockPage = {
     // Bind events for this row
     const sizeInput = row.querySelector('.size-input');
     const rollsInput = row.querySelector('.rolls-input');
+    const metresPerRollInput = row.querySelector('.metres-per-roll-input');
     const removeBtn = row.querySelector('.remove-row-btn');
 
-    if (sizeInput) {
-      sizeInput.addEventListener('input', () => this.updateRowMetres(rowId));
-    }
     if (rollsInput) {
       rollsInput.addEventListener('input', () => this.updateRowMetres(rowId));
+    }
+    if (metresPerRollInput) {
+      metresPerRollInput.addEventListener('input', () => this.updateRowMetres(rowId));
     }
     if (removeBtn) {
       removeBtn.addEventListener('click', () => this.removeSizeRow(rowId));
@@ -224,15 +326,22 @@ const StockPage = {
   },
 
   updateRowMetres(rowId) {
-    const sizeInput = document.querySelector(`.size-input[data-row-id="${rowId}"]`);
     const rollsInput = document.querySelector(`.rolls-input[data-row-id="${rowId}"]`);
+    const metresPerRollInput = document.querySelector(`.metres-per-roll-input[data-row-id="${rowId}"]`);
     const metresDisplay = document.querySelector(`.metres-display[data-row-id="${rowId}"]`);
 
-    if (sizeInput && rollsInput && metresDisplay) {
-      const size = parseFloat(sizeInput.value) || 0;
+    if (rollsInput && metresDisplay) {
       const rolls = parseInt(rollsInput.value) || 0;
-      const metresPerRoll = this.metresPerRoll * size;
-      const totalMetres = rolls * metresPerRoll;
+      let totalMetres = 0;
+      
+      if (this.selectedStickerType === 'reflective' && metresPerRollInput) {
+        // For reflective: use custom metres per roll
+        const metresPerRoll = parseFloat(metresPerRollInput.value) || 0;
+        totalMetres = rolls * metresPerRoll;
+      } else {
+        // For colored/clear: use fixed 50m per roll
+        totalMetres = rolls * this.metresPerRoll;
+      }
       
       metresDisplay.textContent = totalMetres.toLocaleString();
     }
@@ -241,19 +350,26 @@ const StockPage = {
   },
 
   updateTotalSummary() {
-    const sizeInputs = document.querySelectorAll('.size-input');
     const rollsInputs = document.querySelectorAll('.rolls-input');
+    const metresPerRollInputs = document.querySelectorAll('.metres-per-roll-input');
     
     let totalRolls = 0;
     let totalMetres = 0;
+    const isReflective = this.selectedStickerType === 'reflective';
 
     rollsInputs.forEach((input, index) => {
       const rolls = parseInt(input.value) || 0;
-      const size = parseFloat(sizeInputs[index]?.value) || 0;
-      const metresPerRoll = this.metresPerRoll * size;
-      
       totalRolls += rolls;
-      totalMetres += rolls * metresPerRoll;
+      
+      if (isReflective) {
+        // For reflective stickers, use custom metres per roll input
+        const metresPerRollInput = metresPerRollInputs[index];
+        const metresPerRoll = parseFloat(metresPerRollInput?.value) || 0;
+        totalMetres += rolls * metresPerRoll;
+      } else {
+        // For other types, calculate: rolls × 50
+        totalMetres += rolls * this.metresPerRoll;
+      }
     });
 
     const totalRollsEl = document.getElementById('total-rolls');
@@ -275,6 +391,7 @@ const StockPage = {
     // Get all size rows
     const sizeInputs = document.querySelectorAll('.size-input');
     const rollsInputs = document.querySelectorAll('.rolls-input');
+    const metresPerRollInputs = document.querySelectorAll('.metres-per-roll-input');
 
     if (sizeInputs.length === 0) {
       Toast.error('No Size Variant', 'Please add at least one size variant');
@@ -283,6 +400,7 @@ const StockPage = {
 
     // Get selected sticker type
     const stickerType = this.selectedStickerType || 'colored';
+    const isReflective = stickerType === 'reflective';
 
     let addedCount = 0;
     let updatedCount = 0;
@@ -291,25 +409,42 @@ const StockPage = {
     sizeInputs.forEach((sizeInput, index) => {
       const size = sizeInput.value.trim();
       const rolls = parseInt(rollsInputs[index]?.value);
+      const customMetresPerRoll = isReflective ? parseFloat(metresPerRollInputs[index]?.value) : null;
 
       if (!size || !rolls || rolls < 1) {
         return; // Skip invalid rows
+      }
+
+      if (isReflective && (!customMetresPerRoll || customMetresPerRoll <= 0)) {
+        Toast.error('Missing Metres per Roll', 'Please enter metres per roll for reflective stickers');
+        return;
       }
 
       // Check if this color, size, and sticker type combination already exists
       const existing = Store.getStockByColorSizeAndType(color, size, stickerType);
       if (existing) {
         // Add to existing stock
-        Store.addRollsToStock(existing.id, rolls);
+        if (isReflective) {
+          Store.addRollsToStockWithCustomMetres(existing.id, rolls, customMetresPerRoll);
+        } else {
+          Store.addRollsToStock(existing.id, rolls);
+        }
         updatedCount++;
       } else {
         // Create new stock entry
-        Store.addStock({
+        const stockData = {
           color: color,
           size: size,
           sticker_type: stickerType,
           rolls: rolls
-        });
+        };
+        
+        // For reflective, add custom metres per roll
+        if (isReflective) {
+          stockData.custom_metres_per_roll = customMetresPerRoll;
+        }
+        
+        Store.addStock(stockData);
         addedCount++;
       }
     });
@@ -394,7 +529,7 @@ const StockPage = {
               <span class="text-sm font-medium text-gray-900">${item.color}</span>
             </div>
           </td>
-          <td class="px-6 py-4 text-sm text-gray-600">${item.size || '1'}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">${item.size || '1'}in</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.rolls}</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.total_metres.toLocaleString()}m</td>
           <td class="px-6 py-4 text-sm text-gray-600">${item.metres_used.toLocaleString()}m</td>

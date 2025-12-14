@@ -12,8 +12,9 @@ const pageControllers = {
   products: 'ProductsPage',
   stock: 'StockPage',
   sales: 'SalesPage',
-  services: 'ServicesPage',
-  debts: 'DebtsPage'
+  printing: 'PrintingPage',
+  debts: 'DebtsPage',
+  settings: 'SettingsPage'
 };
 
 /**

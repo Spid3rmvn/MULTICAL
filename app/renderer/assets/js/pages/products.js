@@ -83,9 +83,9 @@ const ProductsPage = {
 
     // Handle Form Submit
     if (addForm) {
-      addForm.addEventListener('submit', (e) => {
+      addForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        this.handleSubmit(new FormData(addForm));
+        await this.handleSubmit(new FormData(addForm));
         closeModal();
       });
     }
@@ -98,7 +98,7 @@ const ProductsPage = {
     this.updateTypeUI();
     this.updateColorUI();
     this.updateSizeUI();
-    this.updateSaleInfoText();
+    this.toggleColorSizeSections();
   },
 
   selectProductType(type) {
@@ -106,18 +106,37 @@ const ProductsPage = {
     const hiddenInput = document.getElementById('product-type-input');
     if (hiddenInput) hiddenInput.value = type;
     this.updateTypeUI();
-    this.updateSaleInfoText();
     this.toggleColorSizeSections();
   },
 
   toggleColorSizeSections() {
     const colorSection = document.getElementById('color-section');
     const sizeSection = document.getElementById('size-section');
+    const chevronColors = document.querySelectorAll('.chevron-color');
+    const stripeColors = document.querySelectorAll('.stripe-color');
     
     if (this.selectedProductType === 'chevron') {
       // Show color and size for Chevrons
       if (colorSection) colorSection.classList.remove('hidden');
       if (sizeSection) sizeSection.classList.remove('hidden');
+      // Show chevron colors, hide stripe colors
+      chevronColors.forEach(btn => btn.classList.remove('hidden'));
+      stripeColors.forEach(btn => btn.classList.add('hidden'));
+      // Set default to chevron color
+      this.selectedColor = 'white_red';
+      document.getElementById('product-color-input').value = 'white_red';
+      this.updateColorUI();
+    } else if (this.selectedProductType === 'stripes') {
+      // Show color for Stripes, hide size
+      if (colorSection) colorSection.classList.remove('hidden');
+      if (sizeSection) sizeSection.classList.add('hidden');
+      // Show stripe colors, hide chevron colors
+      chevronColors.forEach(btn => btn.classList.add('hidden'));
+      stripeColors.forEach(btn => btn.classList.remove('hidden'));
+      // Set default to stripe color
+      this.selectedColor = 'white';
+      document.getElementById('product-color-input').value = 'white';
+      this.updateColorUI();
     } else {
       // Hide color and size for Life Savers
       if (colorSection) colorSection.classList.add('hidden');
@@ -134,8 +153,10 @@ const ProductsPage = {
       if (btnType === this.selectedProductType) {
         if (btnType === 'life_saver') {
           btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-green-500 bg-green-50 text-green-800 font-medium text-sm transition-all hover:bg-green-100';
-        } else {
+        } else if (btnType === 'chevron') {
           btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-orange-500 bg-orange-50 text-orange-800 font-medium text-sm transition-all hover:bg-orange-100';
+        } else if (btnType === 'stripes') {
+          btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-800 font-medium text-sm transition-all hover:bg-blue-100';
         }
       } else {
         btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
@@ -155,11 +176,27 @@ const ProductsPage = {
     
     colorButtons.forEach(btn => {
       const btnColor = btn.dataset.color;
+      const isHidden = btn.classList.contains('hidden');
+      
+      // Skip hidden buttons
+      if (isHidden) return;
       
       if (btnColor === this.selectedColor) {
         btn.className = 'product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-900 bg-gray-50 font-medium text-sm transition-all hover:bg-gray-100 flex items-center justify-center gap-2';
+        // Preserve the specific color type class
+        if (btn.dataset.for === 'chevron') {
+          btn.classList.add('chevron-color');
+        } else if (btn.dataset.for === 'stripes') {
+          btn.classList.add('stripe-color');
+        }
       } else {
         btn.className = 'product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center gap-2';
+        // Preserve the specific color type class
+        if (btn.dataset.for === 'chevron') {
+          btn.classList.add('chevron-color');
+        } else if (btn.dataset.for === 'stripes') {
+          btn.classList.add('stripe-color');
+        }
       }
     });
   },
@@ -185,19 +222,9 @@ const ProductsPage = {
     });
   },
 
-  updateSaleInfoText() {
-    const infoText = document.getElementById('sale-info-text');
-    if (!infoText) return;
-
-    const typeConfig = PRODUCT_TYPES[this.selectedProductType];
-    if (typeConfig) {
-      infoText.textContent = `${typeConfig.name}s are sold in ${typeConfig.saleUnit}`;
-    }
-  },
-
-  handleSubmit(formData) {
+  async handleSubmit(formData) {
     const productType = formData.get('product_type');
-    const productColor = productType === 'chevron' ? formData.get('product_color') : null;
+    const productColor = (productType === 'chevron' || productType === 'stripes') ? formData.get('product_color') : null;
     const productSize = productType === 'chevron' ? formData.get('product_size') : null;
     
     const typeConfig = PRODUCT_TYPES[productType];
@@ -207,6 +234,8 @@ const ProductsPage = {
     let productName;
     if (productType === 'life_saver') {
       productName = 'Life Saver';
+    } else if (productType === 'stripes') {
+      productName = `${colorConfig.name} ${typeConfig.name}`;
     } else {
       productName = `${colorConfig.name} ${typeConfig.name} (${productSize})`;
     }
@@ -216,6 +245,9 @@ const ProductsPage = {
       if (productType === 'life_saver') {
         return p.product_type === 'life_saver';
       }
+      if (productType === 'stripes') {
+        return p.product_type === 'stripes' && p.color === productColor;
+      }
       return p.product_type === productType && 
              p.color === productColor && 
              p.size === productSize;
@@ -224,9 +256,8 @@ const ProductsPage = {
     if (existing) {
       // Update stock of existing product
       const additionalStock = parseInt(formData.get('stock'));
-      Store.updateProduct(existing.id, { 
-        stock: existing.stock + additionalStock,
-        selling_price: parseFloat(formData.get('selling_price'))
+      await Store.updateProduct(existing.id, { 
+        stock: existing.stock + additionalStock
       });
       Toast.success('Stock Updated', `Added ${additionalStock} units to ${productName}`);
       return;
@@ -237,13 +268,11 @@ const ProductsPage = {
       product_type: productType,
       color: productColor,
       size: productSize,
-      selling_price: parseFloat(formData.get('selling_price')),
-      stock: parseInt(formData.get('stock')),
-      min_sale_qty: typeConfig.minSaleQty,
-      sale_unit: typeConfig.saleUnit
+      selling_price: 0,
+      stock: parseInt(formData.get('stock'))
     };
     
-    Store.addProduct(product);
+    await Store.addProduct(product);
     Toast.success('Product Added', `${productName} with ${product.stock} units`);
   },
 
@@ -253,16 +282,19 @@ const ProductsPage = {
     const totalProducts = products.length;
     const lifeSavers = products.filter(p => p.product_type === 'life_saver').reduce((sum, p) => sum + p.stock, 0);
     const chevrons = products.filter(p => p.product_type === 'chevron').reduce((sum, p) => sum + p.stock, 0);
-    const stockValue = products.reduce((sum, p) => sum + (p.stock * p.selling_price), 0);
+    const stripes = products.filter(p => p.product_type === 'stripes').reduce((sum, p) => sum + p.stock, 0);
+    const stockValue = products.reduce((sum, p) => sum + (p.stock * (p.selling_price || 0)), 0);
 
     const totalEl = document.getElementById('summary-total-products');
     const lifeSaversEl = document.getElementById('summary-life-savers');
     const chevronsEl = document.getElementById('summary-chevrons');
+    const stripesEl = document.getElementById('summary-stripes');
     const valueEl = document.getElementById('summary-stock-value');
 
     if (totalEl) totalEl.textContent = totalProducts;
     if (lifeSaversEl) lifeSaversEl.textContent = lifeSavers;
     if (chevronsEl) chevronsEl.textContent = chevrons;
+    if (stripesEl) stripesEl.textContent = stripes;
     if (valueEl) valueEl.textContent = `KSh ${stockValue.toLocaleString()}`;
   },
 
@@ -275,7 +307,7 @@ const ProductsPage = {
     if (products.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+          <td colspan="5" class="px-6 py-12 text-center text-gray-500">
              <div class="flex flex-col items-center justify-center">
                 <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -304,15 +336,13 @@ const ProductsPage = {
           ${colorConfig ? `
           <div class="flex items-center gap-2">
             <div class="flex -space-x-1">
-              <div class="w-4 h-4 rounded-full border border-gray-300" style="background-color: ${colorConfig.colors[0]};"></div>
-              <div class="w-4 h-4 rounded-full border border-gray-200" style="background-color: ${colorConfig.colors[1]};"></div>
+              ${colorConfig.colors.map(color => `<div class="w-4 h-4 rounded-full border border-gray-300" style="background-color: ${color};"></div>`).join('')}
             </div>
             <span class="text-sm text-gray-700">${colorConfig.name}</span>
           </div>
           ` : '<span class="text-sm text-gray-400">-</span>'}
         </td>
         <td class="px-6 py-4 text-sm text-gray-600 font-medium">${product.size || '-'}</td>
-        <td class="px-6 py-4 text-sm font-medium text-gray-900">KSh ${product.selling_price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         <td class="px-6 py-4">
           <div class="flex items-center gap-2">
             <span class="status-badge ${product.stock > 10 ? 'status-badge--success' : product.stock > 0 ? 'status-badge--warning' : 'status-badge--error'}">

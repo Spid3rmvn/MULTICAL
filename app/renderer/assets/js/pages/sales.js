@@ -10,14 +10,22 @@ const SalesPage = {
   paymentDropdown: null,
   productDropdown: null,
   productPaymentDropdown: null,
+  servicePaymentDropdown: null,
+  pickerMonth: new Date().getMonth(),
+  pickerYear: new Date().getFullYear(),
+  pickerSelectedDate: null,
 
   init() {
     this.initCustomDropdowns();
     this.bindEvents();
     this.render();
+    this.updateStats();
     
     // Subscribe to store changes
-    Store.subscribe('sales', () => this.render());
+    Store.subscribe('sales', () => {
+      this.render();
+      this.updateStats();
+    });
     Store.subscribe('products', () => this.updateProductDropdownItems());
     Store.subscribe('stock', () => this.updateStockDropdownItems());
   },
@@ -79,8 +87,7 @@ const SalesPage = {
         items: [
           { value: 'cash', label: 'Cash' },
           { value: 'mpesa', label: 'M-Pesa' },
-          { value: 'card', label: 'Card' },
-          { value: 'credit', label: 'Credit (Add to Debt)' }
+          { value: 'till', label: 'Till Number' }
         ],
         onSelect: (selected) => {
           const hiddenInput = document.getElementById('payment-method-input');
@@ -101,14 +108,11 @@ const SalesPage = {
       this.productDropdown = new CustomDropdown(productContainer, {
         placeholder: availableProducts.length > 0 ? 'Choose product' : 'No products - add products first',
         items: availableProducts.map(p => {
-          const typeConfig = PRODUCT_TYPES[p.product_type];
           return {
             value: p.id.toString(),
             label: p.name,
             price: p.selling_price,
             stock: p.stock,
-            minQty: p.min_sale_qty || 1,
-            productType: p.product_type,
             badge: `${p.stock} in stock`
           };
         }),
@@ -129,8 +133,7 @@ const SalesPage = {
         items: [
           { value: 'cash', label: 'Cash' },
           { value: 'mpesa', label: 'M-Pesa' },
-          { value: 'card', label: 'Card' },
-          { value: 'credit', label: 'Credit (Add to Debt)' }
+          { value: 'till', label: 'Till Number' }
         ],
         onSelect: (selected) => {
           const hiddenInput = document.getElementById('product-payment-input');
@@ -139,6 +142,27 @@ const SalesPage = {
       });
       // Auto-select first item
       this.productPaymentDropdown.selectItem(productPaymentContainer.querySelector('.dropdown-item'));
+    }
+
+    // ==================== Service Sale Dropdowns ====================
+    
+    // Payment Method Dropdown (Service Sale)
+    const servicePaymentContainer = document.getElementById('service-payment-dropdown');
+    if (servicePaymentContainer) {
+      this.servicePaymentDropdown = new CustomDropdown(servicePaymentContainer, {
+        placeholder: 'Cash',
+        items: [
+          { value: 'cash', label: 'Cash' },
+          { value: 'mpesa', label: 'M-Pesa' },
+          { value: 'till', label: 'Till Number' }
+        ],
+        onSelect: (selected) => {
+          const hiddenInput = document.getElementById('service-payment-input');
+          if (hiddenInput) hiddenInput.value = selected.value;
+        }
+      });
+      // Auto-select first item
+      this.servicePaymentDropdown.selectItem(servicePaymentContainer.querySelector('.dropdown-item'));
     }
   },
 
@@ -149,6 +173,7 @@ const SalesPage = {
     const btnClose = document.getElementById('btn-close-sale-modal');
     const btnCancel1 = document.getElementById('btn-cancel-sale-1');
     const btnCancel2 = document.getElementById('btn-cancel-sale-2');
+    const btnCancel3 = document.getElementById('btn-cancel-sale-3');
 
     const openModal = () => {
         if (modal) modal.classList.add('open');
@@ -160,8 +185,10 @@ const SalesPage = {
             // Reset forms
             document.getElementById('stock-sale-form')?.reset();
             document.getElementById('sale-form')?.reset();
+            document.getElementById('service-sale-form')?.reset();
             this.resetStockSaleDisplay();
             this.resetProductSaleDisplay();
+            this.resetServiceSaleDisplay();
             // Reset stock sale dropdowns
             this.stockDropdown?.reset();
             this.saleTypeDropdown?.reset();
@@ -169,6 +196,8 @@ const SalesPage = {
             // Reset product sale dropdowns
             this.productDropdown?.reset();
             this.productPaymentDropdown?.reset();
+            // Reset service sale dropdown
+            this.servicePaymentDropdown?.reset();
             // Re-select defaults for stock sale
             const saleTypeContainer = document.getElementById('sale-type-dropdown');
             const paymentContainer = document.getElementById('payment-method-dropdown');
@@ -177,6 +206,9 @@ const SalesPage = {
             // Re-select defaults for product sale
             const productPaymentContainer = document.getElementById('product-payment-dropdown');
             if (productPaymentContainer) this.productPaymentDropdown?.selectItem(productPaymentContainer.querySelector('.dropdown-item'));
+            // Re-select defaults for service sale
+            const servicePaymentContainer = document.getElementById('service-payment-dropdown');
+            if (servicePaymentContainer) this.servicePaymentDropdown?.selectItem(servicePaymentContainer.querySelector('.dropdown-item'));
         }
     };
 
@@ -184,6 +216,7 @@ const SalesPage = {
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (btnCancel1) btnCancel1.addEventListener('click', closeModal);
     if (btnCancel2) btnCancel2.addEventListener('click', closeModal);
+    if (btnCancel3) btnCancel3.addEventListener('click', closeModal);
     
     if (modal) {
         modal.addEventListener('click', (e) => {
@@ -194,16 +227,20 @@ const SalesPage = {
     // Tab switching
     const tabStock = document.getElementById('tab-stock-sale');
     const tabProduct = document.getElementById('tab-product-sale');
+    const tabService = document.getElementById('tab-service-sale');
     const stockSection = document.getElementById('stock-sale-section');
     const productSection = document.getElementById('product-sale-section');
+    const serviceSection = document.getElementById('service-sale-section');
 
     if (tabStock) {
       tabStock.addEventListener('click', (e) => {
-        e.preventDefault(); // prevent subbmision if inside form (it's not, but safety)
+        e.preventDefault();
         tabStock.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
         tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
         stockSection?.classList.remove('hidden');
         productSection?.classList.add('hidden');
+        serviceSection?.classList.add('hidden');
       });
     }
 
@@ -212,18 +249,32 @@ const SalesPage = {
         e.preventDefault();
         tabProduct.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
         tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
         productSection?.classList.remove('hidden');
         stockSection?.classList.add('hidden');
+        serviceSection?.classList.add('hidden');
+      });
+    }
+
+    if (tabService) {
+      tabService.addEventListener('click', (e) => {
+        e.preventDefault();
+        tabService.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
+        tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        serviceSection?.classList.remove('hidden');
+        stockSection?.classList.add('hidden');
+        productSection?.classList.add('hidden');
       });
     }
 
     // Stock sale form events
     const stockForm = document.getElementById('stock-sale-form');
     const stockQuantity = document.getElementById('sale-stock-quantity');
-    const pricePerMetre = document.getElementById('sale-price-per-metre');
+    const stockTotalPrice = document.getElementById('stock-total-price');
 
     if (stockQuantity) stockQuantity.addEventListener('input', () => this.calculateStockSaleTotal());
-    if (pricePerMetre) pricePerMetre.addEventListener('input', () => this.calculateStockSaleTotal());
+    if (stockTotalPrice) stockTotalPrice.addEventListener('input', () => this.calculateStockSaleTotal());
 
     if (stockForm) {
       stockForm.addEventListener('submit', (e) => {
@@ -236,18 +287,28 @@ const SalesPage = {
 
     // Product sale form events
     const form = document.getElementById('sale-form');
-    const productSelect = document.getElementById('sale-product');
-    const quantityInput = document.getElementById('sale-quantity');
-    const discountInput = document.getElementById('sale-discount');
+    const totalPriceInput = document.getElementById('sale-total-price');
 
-    if (productSelect) productSelect.addEventListener('change', () => this.calculateTotal());
-    if (quantityInput) quantityInput.addEventListener('input', () => this.calculateTotal());
-    if (discountInput) discountInput.addEventListener('input', () => this.calculateTotal());
+    if (totalPriceInput) totalPriceInput.addEventListener('input', () => this.calculateTotal());
 
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSubmit(new FormData(form));
+        closeModal();
+      });
+    }
+
+    // Service sale form events
+    const serviceForm = document.getElementById('service-sale-form');
+    const servicePriceInput = document.getElementById('service-price');
+
+    if (servicePriceInput) servicePriceInput.addEventListener('input', () => this.calculateServiceSaleTotal());
+
+    if (serviceForm) {
+      serviceForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleServiceSaleSubmit(new FormData(serviceForm));
         closeModal();
       });
     }
@@ -308,28 +369,25 @@ const SalesPage = {
   calculateStockSaleTotal() {
     const unitInput = document.getElementById('sale-unit-input');
     const quantityInput = document.getElementById('sale-stock-quantity');
-    const priceInput = document.getElementById('sale-price-per-metre');
+    const totalPriceInput = document.getElementById('stock-total-price');
     const metresToDeductEl = document.getElementById('metres-to-deduct');
     const totalEl = document.getElementById('stock-sale-total');
 
-    if (!quantityInput || !priceInput) return;
+    if (!quantityInput || !totalPriceInput) return;
 
     const quantity = parseFloat(quantityInput.value) || 0;
-    const pricePerMetre = parseFloat(priceInput.value) || 0;
+    const totalPrice = parseFloat(totalPriceInput.value) || 0;
     const isRolls = unitInput?.value === 'rolls';
 
     // Calculate metres to deduct
     const metresToDeduct = isRolls ? quantity * this.metresPerRoll : quantity;
-    
-    // Calculate total price
-    const total = metresToDeduct * pricePerMetre;
 
     if (metresToDeductEl) {
       metresToDeductEl.textContent = `${metresToDeduct.toLocaleString()}m`;
     }
 
     if (totalEl) {
-      totalEl.textContent = `KSh ${total.toFixed(2)}`;
+      totalEl.textContent = `KSh ${totalPrice.toFixed(2)}`;
     }
   },
 
@@ -353,11 +411,11 @@ const SalesPage = {
     if (hintEl) hintEl.textContent = '';
   },
 
-  handleStockSaleSubmit(formData) {
+  async handleStockSaleSubmit(formData) {
     const stockId = parseInt(formData.get('stock_id'));
     const saleUnit = formData.get('sale_unit');
     const quantity = parseFloat(formData.get('stock_quantity'));
-    const pricePerMetre = parseFloat(formData.get('price_per_metre'));
+    const totalPrice = parseFloat(formData.get('total_price'));
     const paymentMethod = formData.get('payment_method');
     const customerName = formData.get('customer_name') || 'Walk-in';
 
@@ -371,50 +429,54 @@ const SalesPage = {
       return;
     }
 
+    if (!totalPrice || totalPrice <= 0) {
+      Toast.error('Invalid Price', 'Please enter a valid selling price');
+      return;
+    }
+
     // Calculate metres to deduct
     const metresToDeduct = saleUnit === 'rolls' ? quantity * this.metresPerRoll : quantity;
 
-    // Try to deduct from stock
-    const result = Store.deductStockMetres(stockId, metresToDeduct);
+    // Await the async stock deduction
+    const result = await Store.deductStockMetres(stockId, metresToDeduct);
     
     if (!result.success) {
-      Toast.error('Stock Error', result.error);
+      Toast.error('Stock Error', result.error || 'Unable to deduct stock');
       return;
     }
 
     // Get stock info for sale record
     const stockItem = Store.getStock(stockId);
-    const total = metresToDeduct * pricePerMetre;
     const typeConfig = STICKER_TYPES[stockItem.sticker_type] || STICKER_TYPES.colored;
 
-    // Create sale record
-    const sale = Store.addSale({
+    // Create sale record (await so Store.sales is updated before we proceed)
+    const sale = await Store.addSale({
       type: 'stock',
       stock_id: stockId,
       product_name: `${stockItem.color} ${typeConfig.name} Sticker`,
       sticker_type: stockItem.sticker_type,
       quantity: `${metresToDeduct}m`,
-      amount: total,
+      amount: totalPrice,
       payment_method: paymentMethod,
       customer_name: customerName
     });
 
     // Add to debts if credit
     if (paymentMethod === 'credit') {
-      Store.addDebt({
+      await Store.addDebt({
         customer_name: customerName,
         phone: '',
-        amount: total,
+        amount: totalPrice,
         due_date: null,
         description: `Sale: ${stockItem.color} Sticker - ${metresToDeduct}m`
       });
     }
 
-    // Reset dropdowns
+    // Refresh dropdown items with updated remaining metres
     this.updateStockDropdownItems();
 
     // Show success toast
-    Toast.success('Sale Completed', `${metresToDeduct}m of ${stockItem.color} sticker sold for KSh ${total.toLocaleString()}`);
+    Toast.success('Sale Completed', `${metresToDeduct}m of ${stockItem.color} sticker sold for KSh ${totalPrice.toLocaleString()}`);
   },
 
   // ==================== Product Sale Functions ====================
@@ -422,6 +484,7 @@ const SalesPage = {
   handleSubmit(formData) {
     const productId = parseInt(formData.get('product_id'));
     const quantity = parseInt(formData.get('quantity'));
+    const totalPrice = parseFloat(formData.get('total_price')) || 0;
     const product = Store.getProduct(productId);
 
     if (!product) {
@@ -429,18 +492,8 @@ const SalesPage = {
       return;
     }
 
-    // Check minimum sale quantity
-    const minQty = product.min_sale_qty || 1;
-    if (quantity < minQty) {
-      const typeConfig = PRODUCT_TYPES[product.product_type];
-      Toast.error('Minimum Quantity', `${typeConfig?.name || 'This product'} must be sold in ${typeConfig?.saleUnit || 'minimum ' + minQty + ' units'}`);
-      return;
-    }
-
-    // Validate quantity is multiple of min sale qty
-    if (quantity % minQty !== 0) {
-      const typeConfig = PRODUCT_TYPES[product.product_type];
-      Toast.error('Invalid Quantity', `${typeConfig?.name || 'This product'} must be sold in multiples of ${minQty}`);
+    if (!totalPrice || totalPrice <= 0) {
+      Toast.error('Invalid Price', 'Please enter a valid selling price');
       return;
     }
 
@@ -449,9 +502,6 @@ const SalesPage = {
       return;
     }
 
-    const discount = parseFloat(formData.get('discount')) || 0;
-    const subtotal = product.selling_price * quantity;
-    const total = subtotal - (subtotal * discount / 100);
     const paymentMethod = formData.get('payment_method');
     const customerName = formData.get('customer_name') || 'Walk-in';
 
@@ -462,7 +512,7 @@ const SalesPage = {
       product_name: product.name,
       product_type: product.product_type,
       quantity: quantity,
-      amount: total,
+      amount: totalPrice,
       payment_method: paymentMethod,
       customer_name: customerName
     });
@@ -470,41 +520,23 @@ const SalesPage = {
     // Update stock
     Store.updateProduct(productId, { stock: product.stock - quantity });
 
-    // Add to debts if credit
-    if (paymentMethod === 'credit') {
-      Store.addDebt({
-        customer_name: customerName,
-        phone: '',
-        amount: total,
-        due_date: null,
-        description: `Sale: ${product.name} x${quantity}`
-      });
-    }
-
     // Update product dropdown
     this.updateProductDropdownItems();
 
     // Show success toast
-    Toast.success('Sale Completed', `${quantity}x ${product.name} sold for KSh ${total.toLocaleString()}`);
+    Toast.success('Sale Completed', `${quantity}x ${product.name} sold for KSh ${totalPrice.toLocaleString()}`);
   },
 
   calculateTotal() {
-    const quantityInput = document.getElementById('sale-quantity');
-    const discountInput = document.getElementById('sale-discount');
+    const totalPriceInput = document.getElementById('sale-total-price');
     const totalEl = document.getElementById('sale-total');
-    const productIdInput = document.getElementById('sale-product-id-input');
 
-    const productId = productIdInput?.value ? parseInt(productIdInput.value) : null;
-    const product = productId ? Store.getProduct(productId) : null;
-    const price = product?.selling_price || 0;
-    const quantity = parseInt(quantityInput?.value) || 1;
-    const discount = parseFloat(discountInput?.value) || 0;
-
-    const subtotal = price * quantity;
-    const total = subtotal - (subtotal * discount / 100);
+    if (!totalPriceInput) return;
+    
+    const totalPrice = parseFloat(totalPriceInput.value) || 0;
 
     if (totalEl) {
-      totalEl.textContent = `KSh ${total.toFixed(2)}`;
+      totalEl.textContent = `KSh ${totalPrice.toFixed(2)}`;
     }
   },
 
@@ -513,17 +545,11 @@ const SalesPage = {
     const hintEl = document.getElementById('quantity-hint');
     
     if (infoEl && selected) {
-      infoEl.textContent = `KSh ${parseFloat(selected.price).toLocaleString()} per unit • ${selected.stock} in stock`;
+      infoEl.textContent = `${selected.stock} in stock`;
     }
     
-    if (hintEl && selected) {
-      const minQty = selected.minQty || 1;
-      const typeConfig = PRODUCT_TYPES[selected.productType];
-      if (typeConfig && minQty > 1) {
-        hintEl.textContent = `Minimum: ${minQty} (sold in ${typeConfig.saleUnit})`;
-      } else {
-        hintEl.textContent = '';
-      }
+    if (hintEl) {
+      hintEl.textContent = '';
     }
   },
 
@@ -533,17 +559,72 @@ const SalesPage = {
     const availableProducts = Store.products.filter(p => p.stock > 0);
     
     this.productDropdown.setItems(availableProducts.map(p => {
-      const typeConfig = PRODUCT_TYPES[p.product_type];
       return {
         value: p.id.toString(),
         label: p.name,
         price: p.selling_price,
         stock: p.stock,
-        minQty: p.min_sale_qty || 1,
-        productType: p.product_type,
         badge: `${p.stock} in stock`
       };
     }));
+  },
+
+  // ==================== Service Sale Functions ====================
+
+  calculateServiceSaleTotal() {
+    const priceInput = document.getElementById('service-price');
+    const totalEl = document.getElementById('service-sale-total');
+
+    if (!priceInput) return;
+
+    const price = parseFloat(priceInput.value) || 0;
+
+    if (totalEl) {
+      totalEl.textContent = `KSh ${price.toFixed(2)}`;
+    }
+  },
+
+  resetServiceSaleDisplay() {
+    const totalEl = document.getElementById('service-sale-total');
+    const serviceNameInput = document.getElementById('service-name-input');
+    const priceInput = document.getElementById('service-price');
+    const descriptionInput = document.getElementById('service-description');
+
+    if (totalEl) totalEl.textContent = 'KSh 0.00';
+    if (serviceNameInput) serviceNameInput.value = '';
+    if (priceInput) priceInput.value = '0';
+    if (descriptionInput) descriptionInput.value = '';
+  },
+
+  async handleServiceSaleSubmit(formData) {
+    const serviceName = formData.get('service_name')?.trim();
+    const price = parseFloat(formData.get('price'));
+    const paymentMethod = formData.get('payment_method');
+    const customerName = formData.get('customer_name')?.trim() || 'Walk-in';
+    const description = formData.get('description')?.trim() || '';
+
+    if (!serviceName) {
+      Toast.error('Service Name Required', 'Please enter a service name');
+      return;
+    }
+
+    if (!price || price <= 0) {
+      Toast.error('Invalid Price', 'Please enter a valid price');
+      return;
+    }
+
+    // Create sale record as service type
+    const sale = await Store.addSale({
+      type: 'service',
+      product_name: serviceName,
+      quantity: description || '-',
+      amount: price,
+      payment_method: paymentMethod,
+      customer_name: customerName
+    });
+
+    // Show success toast
+    Toast.success('Service Sale Completed', `${serviceName} - KSh ${price.toLocaleString()}`);
   },
 
   // ==================== Render Sales Table ====================
@@ -557,7 +638,7 @@ const SalesPage = {
     if (todaySales.length === 0) {
       tbody.innerHTML = `
         <tr class="text-center">
-            <td colspan="6" class="px-5 py-8 text-gray-500">
+            <td colspan="7" class="px-5 py-8 text-gray-500">
                 <div class="flex flex-col items-center justify-center">
                     <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
@@ -571,10 +652,19 @@ const SalesPage = {
     }
 
     tbody.innerHTML = todaySales.map(sale => {
-      const time = new Date(sale.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+      const saleDate = new Date(sale.timestamp);
+      const today = new Date();
+      const isToday = saleDate.toDateString() === today.toDateString();
+      
+      // Show time if today, show date + time if older
+      const timeDisplay = isToday 
+        ? saleDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})
+        : saleDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + ' ' + 
+          saleDate.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+      
       return `
       <tr class="hover:bg-gray-50 transition-colors">
-        <td class="px-5 py-4 text-sm text-gray-600">${time}</td>
+        <td class="px-5 py-4 text-sm text-gray-600">${timeDisplay}</td>
         <td class="px-5 py-4">
           <div class="flex items-center gap-2">
             <span class="status-badge ${sale.type === 'stock' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}">${sale.type === 'stock' ? 'Stock' : 'Product'}</span>
@@ -584,11 +674,421 @@ const SalesPage = {
         <td class="px-5 py-4 text-sm text-gray-600">${sale.quantity}</td>
         <td class="px-5 py-4 text-sm font-medium text-gray-900">KSh ${sale.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         <td class="px-5 py-4">
-          <span class="status-badge ${sale.payment_method === 'credit' ? 'status-badge--error' : 'status-badge--success'} capitalize">${sale.payment_method}</span>
+          <span class="status-badge status-badge--success capitalize">${sale.payment_method}</span>
         </td>
         <td class="px-5 py-4 text-sm text-gray-600">${sale.customer_name}</td>
+        <td class="px-5 py-4">
+          <div class="flex items-center gap-2">
+            <button onclick="SalesPage.convertToDebt(${sale.id})" 
+              class="text-gray-400 hover:text-blue-600 transition-colors" 
+              title="Convert to debt">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+              </svg>
+            </button>
+            <button onclick="SalesPage.deleteSale(${sale.id})" 
+              class="text-gray-400 hover:text-red-600 transition-colors" 
+              title="Delete sale">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
       </tr>
     `}).join('');
+  },
+
+  updateStats() {
+    const todayEl = document.getElementById('stat-today-sales');
+    const totalTransactionsEl = document.getElementById('stat-total-transactions');
+    const productSalesEl = document.getElementById('stat-product-sales');
+    const totalSalesEl = document.getElementById('stat-total-sales');
+
+    const todaySales = Store.getTodaySales();
+    const allSales = Store.sales;
+
+    const todayTotal = todaySales.reduce((sum, s) => sum + s.amount, 0);
+    const totalRevenue = allSales.reduce((sum, s) => sum + s.amount, 0);
+    const productSalesCount = allSales.filter(s => s.type === 'product').length;
+
+    if (todayEl) todayEl.textContent = `KSh ${todayTotal.toLocaleString()}`;
+    if (totalTransactionsEl) totalTransactionsEl.textContent = allSales.length;
+    if (productSalesEl) productSalesEl.textContent = productSalesCount;
+    if (totalSalesEl) totalSalesEl.textContent = `KSh ${totalRevenue.toLocaleString()}`;
+  },
+
+  async deleteSale(id) {
+    const sale = Store.sales.find(s => s.id === id);
+    if (!sale) return;
+    
+    ConfirmModal.show({
+      title: 'Delete Sale?',
+      message: 'Are you sure you want to delete this sale? Stock/products will be returned to inventory.',
+      itemName: sale.product_name,
+      itemDetails: `${sale.quantity} - KSh ${sale.amount.toLocaleString()}`,
+      onConfirm: async () => {
+        // Restore stock or product based on sale type
+        if (sale.type === 'product' && sale.product_id) {
+          // Return product stock
+          const product = Store.getProduct(sale.product_id);
+          if (product) {
+            const quantityToReturn = parseInt(sale.quantity) || 1;
+            await Store.updateProduct(sale.product_id, {
+              stock: product.stock + quantityToReturn
+            });
+          }
+        } else if (sale.type === 'stock' && sale.stock_id) {
+          // Return sticker metres
+          const stockItem = Store.getStock(sale.stock_id);
+          if (stockItem) {
+            const metresMatch = sale.quantity?.match(/([\d.]+)m/);
+            const metresToReturn = metresMatch ? parseFloat(metresMatch[1]) : 0;
+            if (metresToReturn > 0) {
+              const newMetresUsed = Math.max(0, stockItem.metres_used - metresToReturn);
+              await Store.updateStock(sale.stock_id, {
+                metres_used: newMetresUsed
+              });
+            }
+          }
+        }
+        
+        await Store.deleteSale(id);
+        Toast.success('Sale Deleted', `${sale.product_name} removed and stock returned`);
+        
+        // Update stats and refresh views
+        this.updateStats();
+        this.render();
+      }
+    });
+  },
+
+  convertToDebt(saleId) {
+    const sale = Store.sales.find(s => s.id === saleId);
+    if (!sale) return;
+
+    // Create and show modal for converting to debt
+    const modalHTML = `
+      <div id="modal-convert-debt" class="modal-overlay open">
+        <div class="modal-container" style="max-width: 500px;">
+          <div class="modal-header">
+            <h3 class="modal-title">Convert Sale to Debt</h3>
+            <button class="modal-close-btn" onclick="SalesPage.closeConvertDebtModal()">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <p class="text-sm text-gray-500">Sale Details</p>
+              <p class="font-semibold text-gray-900">${sale.product_name}</p>
+              <p class="text-sm text-gray-600">${sale.quantity} - KSh ${sale.amount.toLocaleString()}</p>
+            </div>
+            
+            <form id="convert-debt-form" class="space-y-4">
+              <input type="hidden" id="convert-sale-id" value="${saleId}">
+              <input type="hidden" id="convert-sale-amount" value="${sale.amount}">
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
+                <input type="text" id="convert-customer-name" value="${sale.customer_name}" 
+                  class="w-full" placeholder="Enter customer name" required>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Phone</label>
+                <input type="tel" id="convert-customer-phone" class="w-full" placeholder="Optional">
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Total Sale Amount</label>
+                <div class="px-3 py-2 bg-gray-100 rounded-lg text-lg font-bold text-gray-900">
+                  KSh ${sale.amount.toLocaleString()}
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid *</label>
+                <input type="number" id="convert-amount-paid" min="0" max="${sale.amount}" 
+                  step="0.01" value="0" class="w-full" placeholder="0.00" required>
+                <p class="text-xs text-gray-500 mt-1">How much the customer has already paid</p>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Remaining Debt</label>
+                <div class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-lg font-bold text-red-600" 
+                  id="convert-remaining-debt">
+                  KSh ${sale.amount.toLocaleString()}
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                <div class="relative">
+                  <input type="text" id="convert-due-date-display" readonly class="w-full cursor-pointer"
+                    placeholder="Select due date">
+                  <input type="hidden" id="convert-due-date" value="">
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                      </path>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" 
+              onclick="SalesPage.closeConvertDebtModal()">Cancel</button>
+            <button type="button" class="btn-primary px-4 py-2 rounded-lg" 
+              onclick="SalesPage.submitConvertDebt()">Create Debt</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add modal to page
+    const existingModal = document.getElementById('modal-convert-debt');
+    if (existingModal) existingModal.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listener for amount paid input
+    const amountPaidInput = document.getElementById('convert-amount-paid');
+    if (amountPaidInput) {
+      amountPaidInput.addEventListener('input', () => {
+        const totalAmount = parseFloat(document.getElementById('convert-sale-amount').value) || 0;
+        const amountPaid = parseFloat(amountPaidInput.value) || 0;
+        const remaining = Math.max(0, totalAmount - amountPaid);
+        const remainingEl = document.getElementById('convert-remaining-debt');
+        if (remainingEl) {
+          remainingEl.textContent = `KSh ${remaining.toLocaleString()}`;
+        }
+      });
+    }
+
+    // Add date picker click handler
+    const dueDateDisplay = document.getElementById('convert-due-date-display');
+    if (dueDateDisplay) {
+      dueDateDisplay.addEventListener('click', () => {
+        this.openConvertDatePicker();
+      });
+    }
+  },
+
+  openConvertDatePicker() {
+    // Open the sales page date picker modal
+    const datePickerModal = document.getElementById('modal-sales-date-picker');
+    if (!datePickerModal) return;
+
+    // Initialize picker state
+    this.pickerMonth = new Date().getMonth();
+    this.pickerYear = new Date().getFullYear();
+    this.pickerSelectedDate = null;
+    
+    datePickerModal.classList.add('open');
+    this.renderDatePicker();
+
+    // Bind calendar events if not already bound
+    this.bindDatePickerEvents();
+  },
+
+  closeConvertDebtModal() {
+    const modal = document.getElementById('modal-convert-debt');
+    if (modal) modal.remove();
+  },
+
+  async submitConvertDebt() {
+    const saleId = parseInt(document.getElementById('convert-sale-id').value);
+    const totalAmount = parseFloat(document.getElementById('convert-sale-amount').value);
+    const customerName = document.getElementById('convert-customer-name').value.trim();
+    const customerPhone = document.getElementById('convert-customer-phone').value.trim();
+    const amountPaid = parseFloat(document.getElementById('convert-amount-paid').value) || 0;
+    const dueDate = document.getElementById('convert-due-date').value || null;
+
+    if (!customerName) {
+      Toast.error('Missing Information', 'Please enter customer name');
+      return;
+    }
+
+    const remainingDebt = totalAmount - amountPaid;
+
+    if (remainingDebt <= 0) {
+      Toast.error('No Debt', 'The amount paid equals or exceeds the sale amount. No debt to create.');
+      return;
+    }
+
+    const sale = Store.sales.find(s => s.id === saleId);
+    if (!sale) return;
+
+    // Create debt with paid_amount set to the amount already paid
+    const debt = {
+      customer_name: customerName,
+      phone: customerPhone || null,
+      amount: totalAmount,
+      paid_amount: amountPaid,
+      remaining_amount: remainingDebt,
+      due_date: dueDate,
+      description: `Sale: ${sale.product_name} (${sale.quantity}) - Total: KSh ${totalAmount.toLocaleString()}, Paid: KSh ${amountPaid.toLocaleString()}, Remaining: KSh ${remainingDebt.toLocaleString()}`
+    };
+
+    await Store.addDebt(debt);
+    
+    Toast.success('Debt Created', `Debt of KSh ${remainingDebt.toLocaleString()} created for ${customerName}`);
+    
+    this.closeConvertDebtModal();
+  },
+
+  bindDatePickerEvents() {
+    const datePickerModal = document.getElementById('modal-sales-date-picker');
+    const btnClose = document.getElementById('btn-close-sales-date-picker');
+    const btnPrevMonth = document.getElementById('btn-sales-picker-prev-month');
+    const btnNextMonth = document.getElementById('btn-sales-picker-next-month');
+    const btnClear = document.getElementById('btn-sales-clear-date');
+    const btnToday = document.getElementById('btn-sales-today-date');
+
+    if (btnClose && !btnClose.dataset.bound) {
+      btnClose.dataset.bound = 'true';
+      btnClose.addEventListener('click', () => {
+        datePickerModal.classList.remove('open');
+      });
+    }
+
+    if (btnPrevMonth && !btnPrevMonth.dataset.bound) {
+      btnPrevMonth.dataset.bound = 'true';
+      btnPrevMonth.addEventListener('click', () => {
+        this.pickerMonth--;
+        if (this.pickerMonth < 0) {
+          this.pickerMonth = 11;
+          this.pickerYear--;
+        }
+        this.renderDatePicker();
+      });
+    }
+
+    if (btnNextMonth && !btnNextMonth.dataset.bound) {
+      btnNextMonth.dataset.bound = 'true';
+      btnNextMonth.addEventListener('click', () => {
+        this.pickerMonth++;
+        if (this.pickerMonth > 11) {
+          this.pickerMonth = 0;
+          this.pickerYear++;
+        }
+        this.renderDatePicker();
+      });
+    }
+
+    if (btnClear && !btnClear.dataset.bound) {
+      btnClear.dataset.bound = 'true';
+      btnClear.addEventListener('click', () => {
+        const hiddenInput = document.getElementById('convert-due-date');
+        const displayInput = document.getElementById('convert-due-date-display');
+        if (hiddenInput) hiddenInput.value = '';
+        if (displayInput) displayInput.value = '';
+        datePickerModal.classList.remove('open');
+      });
+    }
+
+    if (btnToday && !btnToday.dataset.bound) {
+      btnToday.dataset.bound = 'true';
+      btnToday.addEventListener('click', () => {
+        const today = new Date();
+        this.setPickerDate(today);
+        datePickerModal.classList.remove('open');
+      });
+    }
+  },
+
+  renderDatePicker() {
+    const monthYearEl = document.getElementById('sales-picker-month-year');
+    const gridEl = document.getElementById('sales-picker-calendar-grid');
+    
+    if (!gridEl) return;
+
+    // Update month/year display
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    if (monthYearEl) {
+      monthYearEl.textContent = `${monthNames[this.pickerMonth]} ${this.pickerYear}`;
+    }
+
+    // Get first and last day of month
+    const firstDay = new Date(this.pickerYear, this.pickerMonth, 1);
+    const lastDay = new Date(this.pickerYear, this.pickerMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    // Clear existing days (keep headers)
+    const headers = gridEl.querySelectorAll('.calendar-day-header');
+    gridEl.innerHTML = '';
+    headers.forEach(h => gridEl.appendChild(h));
+
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      const emptyDay = document.createElement('div');
+      emptyDay.className = 'calendar-day other-month';
+      gridEl.appendChild(emptyDay);
+    }
+
+    // Add days of the month
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayEl = document.createElement('div');
+      dayEl.className = 'calendar-day';
+      
+      // Check if today
+      if (day === today.getDate() && this.pickerMonth === today.getMonth() && this.pickerYear === today.getFullYear()) {
+        dayEl.classList.add('today');
+      }
+
+      // Check if selected
+      if (this.pickerSelectedDate && 
+          this.pickerSelectedDate.getDate() === day && 
+          this.pickerSelectedDate.getMonth() === this.pickerMonth && 
+          this.pickerSelectedDate.getFullYear() === this.pickerYear) {
+        dayEl.classList.add('selected');
+      }
+
+      // Day number
+      const dayNumber = document.createElement('div');
+      dayNumber.className = 'calendar-day-number';
+      dayNumber.textContent = day;
+      dayEl.appendChild(dayNumber);
+
+      // Click handler
+      dayEl.addEventListener('click', () => {
+        const selectedDate = new Date(this.pickerYear, this.pickerMonth, day);
+        this.setPickerDate(selectedDate);
+        // Close picker after selection
+        const datePickerModal = document.getElementById('modal-sales-date-picker');
+        if (datePickerModal) datePickerModal.classList.remove('open');
+      });
+
+      gridEl.appendChild(dayEl);
+    }
+  },
+
+  setPickerDate(date) {
+    this.pickerSelectedDate = date;
+    
+    // Format date as YYYY-MM-DD for the hidden input
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const formattedValue = `${year}-${month}-${day}`;
+    
+    // Format date for display (e.g., "January 15, 2024")
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const formattedDisplay = `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    
+    const hiddenInput = document.getElementById('convert-due-date');
+    const displayInput = document.getElementById('convert-due-date-display');
+    
+    if (hiddenInput) hiddenInput.value = formattedValue;
+    if (displayInput) displayInput.value = formattedDisplay;
+    
+    this.renderDatePicker();
   }
 };
 

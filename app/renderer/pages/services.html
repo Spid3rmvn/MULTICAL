@@ -149,8 +149,17 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                            <input type="text" name="unit" class="w-full" placeholder="e.g., per page">
+                            <input type="text" name="unit" class="w-full" placeholder="e.g., per page, per sqm">
                         </div>
+                    </div>
+                    <div>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="uses_stock" id="uses-stock-checkbox"
+                                class="w-4 h-4 text-black rounded border-gray-300">
+                            <span class="text-sm font-medium text-gray-700">This service uses stock material</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">Check this if the service requires printing on sticker
+                            material from stock</p>
                     </div>
                     <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
                         <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
@@ -182,6 +191,28 @@
                         <input type="hidden" name="service_id" id="service-id-input">
                         <p id="service-price-hint" class="text-xs text-gray-500 mt-1"></p>
                     </div>
+
+                    <!-- Stock Selection (shown only for stock-based services) -->
+                    <div id="stock-selection-section" class="hidden">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                            <p class="text-xs text-blue-800 font-medium">This service uses stock material</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Material Color *</label>
+                                <div id="material-color-dropdown"></div>
+                                <input type="hidden" name="stock_id" id="material-stock-id-input">
+                                <p id="material-remaining-info" class="text-xs text-gray-500 mt-1"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Metres to Use *</label>
+                                <input type="number" name="stock_metres_used" id="metres-used-input" min="0.01"
+                                    step="0.01" value="1" class="w-full">
+                                <p class="text-xs text-gray-500 mt-1">Material consumed for this job</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>

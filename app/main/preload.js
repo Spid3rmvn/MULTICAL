@@ -21,6 +21,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectDirectory: (options) => ipcRenderer.invoke('dialog:openDirectory', options),
 });
 
+// App API exposed to renderer (for settings page)
+contextBridge.exposeInMainWorld('app', {
+  getVersion: () => ipcRenderer.invoke('app:version'),
+  getPlatform: async () => {
+    const platform = process.platform;
+    const version = process.versions.electron;
+    return `Electron ${version || 'Unknown'} (${platform})`;
+  }
+});
+
 // Database API exposed to renderer
 contextBridge.exposeInMainWorld('db', {
   // ==================== Products ====================
@@ -48,7 +58,8 @@ contextBridge.exposeInMainWorld('db', {
     getAll: () => ipcRenderer.invoke('db:sales:getAll'),
     getToday: () => ipcRenderer.invoke('db:sales:getToday'),
     add: (sale) => ipcRenderer.invoke('db:sales:add', sale),
-    getTodayTotal: () => ipcRenderer.invoke('db:sales:getTodayTotal')
+    getTodayTotal: () => ipcRenderer.invoke('db:sales:getTodayTotal'),
+    delete: (id) => ipcRenderer.invoke('db:sales:delete', id)
   },
   
   // ==================== Debts ====================
@@ -61,6 +72,11 @@ contextBridge.exposeInMainWorld('db', {
     getTotalOutstanding: () => ipcRenderer.invoke('db:debts:getTotalOutstanding'),
     getPaidThisMonth: () => ipcRenderer.invoke('db:debts:getPaidThisMonth'),
     getOverdue: () => ipcRenderer.invoke('db:debts:getOverdue')
+  },
+  debtPayments: {
+    add: (payment) => ipcRenderer.invoke('db:debtPayments:add', payment),
+    getByDebt: (debtId) => ipcRenderer.invoke('db:debtPayments:getByDebt', debtId),
+    delete: (id) => ipcRenderer.invoke('db:debtPayments:delete', id)
   },
   
   // ==================== Services ====================
@@ -79,7 +95,17 @@ contextBridge.exposeInMainWorld('db', {
     getToday: () => ipcRenderer.invoke('db:serviceTransactions:getToday'),
     add: (transaction) => ipcRenderer.invoke('db:serviceTransactions:add', transaction),
     getTodayTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTodayTotal'),
-    getTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTotal')
+    getTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTotal'),
+    delete: (id) => ipcRenderer.invoke('db:serviceTransactions:delete', id)
+  },
+  
+  // ==================== Printing Materials ====================
+  printingMaterials: {
+    getAll: () => ipcRenderer.invoke('db:printingMaterials:getAll'),
+    get: (id) => ipcRenderer.invoke('db:printingMaterials:get', id),
+    add: (material) => ipcRenderer.invoke('db:printingMaterials:add', material),
+    update: (id, updates) => ipcRenderer.invoke('db:printingMaterials:update', id, updates),
+    delete: (id) => ipcRenderer.invoke('db:printingMaterials:delete', id)
   },
   
   // ==================== Migration ====================

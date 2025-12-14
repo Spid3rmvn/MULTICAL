@@ -50,8 +50,6 @@ class DatabaseManager {
         size TEXT,
         selling_price REAL NOT NULL DEFAULT 0,
         stock INTEGER NOT NULL DEFAULT 0,
-        min_sale_qty INTEGER NOT NULL DEFAULT 1,
-        sale_unit TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -100,11 +98,26 @@ class DatabaseManager {
         customer_name TEXT NOT NULL,
         phone TEXT,
         amount REAL NOT NULL DEFAULT 0,
+        paid_amount REAL NOT NULL DEFAULT 0,
+        remaining_amount REAL NOT NULL DEFAULT 0,
         due_date TEXT,
         description TEXT,
         status TEXT NOT NULL DEFAULT 'pending',
         paid_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Debt payments table (for tracking installments)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS debt_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        debt_id INTEGER NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        notes TEXT,
+        payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (debt_id) REFERENCES debts(id) ON DELETE CASCADE
       )
     `);
 
@@ -116,6 +129,7 @@ class DatabaseManager {
         description TEXT,
         price REAL NOT NULL DEFAULT 0,
         unit TEXT,
+        uses_stock INTEGER NOT NULL DEFAULT 0,
         is_active INTEGER NOT NULL DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -134,12 +148,98 @@ class DatabaseManager {
         payment_method TEXT NOT NULL DEFAULT 'cash',
         customer_name TEXT DEFAULT 'Walk-in',
         notes TEXT,
+        stock_id INTEGER,
+        stock_metres_used REAL DEFAULT 0,
+        material_size TEXT,
+        material_type TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL,
+        FOREIGN KEY (stock_id) REFERENCES stock(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Printing materials table (for non-sticker materials like banners, satin)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS printing_materials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        material_type TEXT NOT NULL,
+        width REAL NOT NULL DEFAULT 1,
+        rolls INTEGER NOT NULL DEFAULT 0,
+        metres_per_roll REAL NOT NULL DEFAULT 50,
+        total_metres REAL NOT NULL DEFAULT 0,
+        metres_used REAL NOT NULL DEFAULT 0,
+        color TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     console.log('Database tables created');
+    
+    // Run migrations to add any missing columns
+    this.runMigrations();
+  }
+
+  /**
+   * Run database migrations to add missing columns
+   */
+  runMigrations() {
+    try {
+      // Check if stock_id column exists in service_transactions
+      const columns = this.db.prepare("PRAGMA table_info(service_transactions)").all();
+      const hasStockId = columns.some(col => col.name === 'stock_id');
+      const hasStockMetresUsed = columns.some(col => col.name === 'stock_metres_used');
+      const hasMaterialSize = columns.some(col => col.name === 'material_size');
+      const hasMaterialType = columns.some(col => col.name === 'material_type');
+      const hasPrintingMaterialId = columns.some(col => col.name === 'printing_material_id');
+      
+      if (!hasStockId) {
+        console.log('Adding stock_id column to service_transactions');
+        this.db.exec('ALTER TABLE service_transactions ADD COLUMN stock_id INTEGER');
+      }
+      
+      if (!hasStockMetresUsed) {
+        console.log('Adding stock_metres_used column to service_transactions');
+        this.db.exec('ALTER TABLE service_transactions ADD COLUMN stock_metres_used REAL DEFAULT 0');
+      }
+      
+      if (!hasMaterialSize) {
+        console.log('Adding material_size column to service_transactions');
+        this.db.exec('ALTER TABLE service_transactions ADD COLUMN material_size TEXT');
+      }
+      
+      if (!hasMaterialType) {
+        console.log('Adding material_type column to service_transactions');
+        this.db.exec('ALTER TABLE service_transactions ADD COLUMN material_type TEXT');
+      }
+      
+      if (!hasPrintingMaterialId) {
+        console.log('Adding printing_material_id column to service_transactions');
+        this.db.exec('ALTER TABLE service_transactions ADD COLUMN printing_material_id INTEGER');
+      }
+      
+      // Check debts table columns
+      const debtColumns = this.db.prepare("PRAGMA table_info(debts)").all();
+      const hasPaidAmount = debtColumns.some(col => col.name === 'paid_amount');
+      const hasRemainingAmount = debtColumns.some(col => col.name === 'remaining_amount');
+      
+      if (!hasPaidAmount) {
+        console.log('Adding paid_amount column to debts');
+        this.db.exec('ALTER TABLE debts ADD COLUMN paid_amount REAL NOT NULL DEFAULT 0');
+      }
+      
+      if (!hasRemainingAmount) {
+        console.log('Adding remaining_amount column to debts');
+        this.db.exec('ALTER TABLE debts ADD COLUMN remaining_amount REAL NOT NULL DEFAULT 0');
+        // Update existing debts: remaining_amount = amount - paid_amount
+        this.db.exec('UPDATE debts SET remaining_amount = amount - COALESCE(paid_amount, 0)');
+      }
+      
+      console.log('Database migrations completed');
+    } catch (error) {
+      console.error('Migration error:', error);
+    }
   }
 
   // ==================== Products CRUD ====================
@@ -154,8 +254,8 @@ class DatabaseManager {
 
   addProduct(product) {
     const stmt = this.db.prepare(`
-      INSERT INTO products (name, product_type, color, size, selling_price, stock, min_sale_qty, sale_unit)
-      VALUES (@name, @product_type, @color, @size, @selling_price, @stock, @min_sale_qty, @sale_unit)
+      INSERT INTO products (name, product_type, color, size, selling_price, stock)
+      VALUES (@name, @product_type, @color, @size, @selling_price, @stock)
     `);
     const result = stmt.run(product);
     return { ...product, id: result.lastInsertRowid };
@@ -250,6 +350,10 @@ class DatabaseManager {
     return result.total;
   }
 
+  deleteSale(id) {
+    this.db.prepare('DELETE FROM sales WHERE id = ?').run(id);
+  }
+
   // ==================== Debts CRUD ====================
 
   getAllDebts() {
@@ -262,8 +366,8 @@ class DatabaseManager {
 
   addDebt(debt) {
     const stmt = this.db.prepare(`
-      INSERT INTO debts (customer_name, phone, amount, due_date, description, status)
-      VALUES (@customer_name, @phone, @amount, @due_date, @description, 'pending')
+      INSERT INTO debts (customer_name, phone, amount, paid_amount, remaining_amount, due_date, description, status)
+      VALUES (@customer_name, @phone, @amount, 0, @amount, @due_date, @description, 'pending')
     `);
     const result = stmt.run({
       customer_name: debt.customer_name,
@@ -272,7 +376,7 @@ class DatabaseManager {
       due_date: debt.due_date || null,
       description: debt.description || null
     });
-    return { ...debt, id: result.lastInsertRowid, status: 'pending', created_at: new Date().toISOString() };
+    return { ...debt, id: result.lastInsertRowid, status: 'pending', paid_amount: 0, remaining_amount: debt.amount, created_at: new Date().toISOString() };
   }
 
   markDebtPaid(id) {
@@ -284,16 +388,15 @@ class DatabaseManager {
   }
 
   getTotalOutstanding() {
-    const result = this.db.prepare("SELECT COALESCE(SUM(amount), 0) as total FROM debts WHERE status = 'pending'").get();
+    const result = this.db.prepare("SELECT COALESCE(SUM(remaining_amount), 0) as total FROM debts WHERE status = 'pending'").get();
     return result.total;
   }
 
   getPaidThisMonth() {
     const result = this.db.prepare(`
       SELECT COALESCE(SUM(amount), 0) as total 
-      FROM debts 
-      WHERE status = 'paid' 
-      AND strftime('%Y-%m', paid_at) = strftime('%Y-%m', 'now')
+      FROM debt_payments 
+      WHERE strftime('%Y-%m', payment_date) = strftime('%Y-%m', 'now')
     `).get();
     return result.total;
   }
@@ -305,6 +408,64 @@ class DatabaseManager {
       AND due_date IS NOT NULL 
       AND DATE(due_date) < DATE('now')
     `).all();
+  }
+
+  // ==================== Debt Payments CRUD ====================
+
+  getDebtPayments(debtId) {
+    return this.db.prepare('SELECT * FROM debt_payments WHERE debt_id = ? ORDER BY payment_date DESC').all(debtId);
+  }
+
+  addDebtPayment(payment) {
+    const stmt = this.db.prepare(`
+      INSERT INTO debt_payments (debt_id, amount, payment_method, notes)
+      VALUES (@debt_id, @amount, @payment_method, @notes)
+    `);
+    const result = stmt.run({
+      debt_id: payment.debt_id,
+      amount: payment.amount,
+      payment_method: payment.payment_method || 'cash',
+      notes: payment.notes || null
+    });
+    
+    // Update debt paid_amount and remaining_amount
+    const debt = this.db.prepare('SELECT * FROM debts WHERE id = ?').get(payment.debt_id);
+    if (debt) {
+      const newPaidAmount = debt.paid_amount + payment.amount;
+      const newRemainingAmount = Math.max(0, debt.amount - newPaidAmount);
+      const newStatus = newRemainingAmount <= 0 ? 'paid' : 'pending';
+      
+      this.db.prepare(`
+        UPDATE debts 
+        SET paid_amount = ?, remaining_amount = ?, status = ?, paid_at = CASE WHEN ? = 'paid' THEN CURRENT_TIMESTAMP ELSE paid_at END
+        WHERE id = ?
+      `).run(newPaidAmount, newRemainingAmount, newStatus, newStatus, payment.debt_id);
+    }
+    
+    return { ...payment, id: result.lastInsertRowid, payment_date: new Date().toISOString() };
+  }
+
+  deleteDebtPayment(id) {
+    // Get payment details before deleting
+    const payment = this.db.prepare('SELECT * FROM debt_payments WHERE id = ?').get(id);
+    if (payment) {
+      // Reverse the payment from debt
+      const debt = this.db.prepare('SELECT * FROM debts WHERE id = ?').get(payment.debt_id);
+      if (debt) {
+        const newPaidAmount = Math.max(0, debt.paid_amount - payment.amount);
+        const newRemainingAmount = debt.amount - newPaidAmount;
+        const newStatus = newRemainingAmount > 0 ? 'pending' : 'paid';
+        
+        this.db.prepare(`
+          UPDATE debts 
+          SET paid_amount = ?, remaining_amount = ?, status = ?
+          WHERE id = ?
+        `).run(newPaidAmount, newRemainingAmount, newStatus, payment.debt_id);
+      }
+      
+      // Delete the payment
+      this.db.prepare('DELETE FROM debt_payments WHERE id = ?').run(id);
+    }
   }
 
   // ==================== Services CRUD ====================
@@ -362,8 +523,14 @@ class DatabaseManager {
 
   addServiceTransaction(transaction) {
     const stmt = this.db.prepare(`
-      INSERT INTO service_transactions (service_id, service_name, quantity, price, amount, payment_method, customer_name, notes)
-      VALUES (@service_id, @service_name, @quantity, @price, @amount, @payment_method, @customer_name, @notes)
+      INSERT INTO service_transactions (
+        service_id, service_name, quantity, price, amount, payment_method, customer_name, notes,
+        stock_id, stock_metres_used, material_size, material_type, printing_material_id
+      )
+      VALUES (
+        @service_id, @service_name, @quantity, @price, @amount, @payment_method, @customer_name, @notes,
+        @stock_id, @stock_metres_used, @material_size, @material_type, @printing_material_id
+      )
     `);
     const result = stmt.run({
       service_id: transaction.service_id || null,
@@ -373,8 +540,23 @@ class DatabaseManager {
       amount: transaction.amount || 0,
       payment_method: transaction.payment_method || 'cash',
       customer_name: transaction.customer_name || 'Walk-in',
-      notes: transaction.notes || null
+      notes: transaction.notes || null,
+      stock_id: transaction.stock_id || null,
+      stock_metres_used: transaction.stock_metres_used || 0,
+      material_size: transaction.material_size || null,
+      material_type: transaction.material_type || null,
+      printing_material_id: transaction.printing_material_id || null
     });
+    
+    // If stock was used, update the stock metres_used
+    if (transaction.stock_id && transaction.stock_metres_used > 0) {
+      const stock = this.getStock(transaction.stock_id);
+      if (stock) {
+        const newMetresUsed = stock.metres_used + transaction.stock_metres_used;
+        this.updateStock(transaction.stock_id, { metres_used: newMetresUsed });
+      }
+    }
+    
     return { ...transaction, id: result.lastInsertRowid, timestamp: new Date().toISOString() };
   }
 
@@ -393,6 +575,39 @@ class DatabaseManager {
       FROM service_transactions
     `).get();
     return result.total;
+  }
+
+  deleteServiceTransaction(id) {
+    this.db.prepare('DELETE FROM service_transactions WHERE id = ?').run(id);
+  }
+
+  // ==================== Printing Materials CRUD ====================
+
+  getAllPrintingMaterials() {
+    return this.db.prepare('SELECT * FROM printing_materials ORDER BY created_at DESC').all();
+  }
+
+  getPrintingMaterial(id) {
+    return this.db.prepare('SELECT * FROM printing_materials WHERE id = ?').get(id);
+  }
+
+  addPrintingMaterial(material) {
+    const stmt = this.db.prepare(`
+      INSERT INTO printing_materials (name, material_type, width, rolls, metres_per_roll, total_metres, metres_used, color)
+      VALUES (@name, @material_type, @width, @rolls, @metres_per_roll, @total_metres, @metres_used, @color)
+    `);
+    const result = stmt.run(material);
+    return { ...material, id: result.lastInsertRowid };
+  }
+
+  updatePrintingMaterial(id, updates) {
+    const fields = Object.keys(updates).map(key => `${key} = @${key}`).join(', ');
+    const stmt = this.db.prepare(`UPDATE printing_materials SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = @id`);
+    stmt.run({ ...updates, id });
+  }
+
+  deletePrintingMaterial(id) {
+    this.db.prepare('DELETE FROM printing_materials WHERE id = ?').run(id);
   }
 
   // ==================== Migration from localStorage ====================

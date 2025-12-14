@@ -6,6 +6,8 @@
 const ServicesPage = {
   serviceDropdown: null,
   paymentDropdown: null,
+  materialColorDropdown: null,
+  currentSelectedService: null,
 
   init() {
     this.initCustomDropdowns();
@@ -38,12 +40,15 @@ const ServicesPage = {
           label: s.name,
           price: s.price,
           unit: s.unit || '',
+          uses_stock: s.uses_stock || 0,
           badge: `KSh ${s.price.toLocaleString()}`
         })),
         onSelect: (selected) => {
           const hiddenInput = document.getElementById('service-id-input');
           if (hiddenInput) hiddenInput.value = selected.value;
+          this.currentSelectedService = Store.getService(parseInt(selected.value));
           this.updateServiceHint(selected);
+          this.toggleStockSelection(selected.uses_stock === 1);
           this.updateTransactionTotal();
         }
       });
@@ -67,6 +72,64 @@ const ServicesPage = {
       // Auto-select first item
       this.paymentDropdown.selectItem(paymentContainer.querySelector('.dropdown-item'));
     }
+    
+    // Material Color Dropdown (for stock-based services)
+    this.initMaterialColorDropdown();
+  },
+  
+  initMaterialColorDropdown() {
+    const materialContainer = document.getElementById('material-color-dropdown');
+    if (materialContainer) {
+      const availableStock = Store.getAvailableStockColors();
+      
+      this.materialColorDropdown = new CustomDropdown(materialContainer, {
+        placeholder: availableStock.length > 0 ? 'Select material' : 'No stock available',
+        items: availableStock.map(s => ({
+          value: s.id.toString(),
+          label: `${s.color} (${s.size || '1'}m)`,
+          colorName: s.color,
+          size: s.size,
+          stickerType: s.sticker_type,
+          remaining: s.remaining,
+          badge: `${s.remaining.toFixed(1)}m left`
+        })),
+        onSelect: (selected) => {
+          const hiddenInput = document.getElementById('material-stock-id-input');
+          if (hiddenInput) hiddenInput.value = selected.value;
+          this.updateMaterialInfo(selected);
+        }
+      });
+    }
+  },
+  
+  toggleStockSelection(show) {
+    const stockSection = document.getElementById('stock-selection-section');
+    if (stockSection) {
+      if (show) {
+        stockSection.classList.remove('hidden');
+        // Refresh material dropdown with current stock
+        this.initMaterialColorDropdown();
+      } else {
+        stockSection.classList.add('hidden');
+        // Clear stock inputs
+        const stockIdInput = document.getElementById('material-stock-id-input');
+        const metresInput = document.getElementById('metres-used-input');
+        if (stockIdInput) stockIdInput.value = '';
+        if (metresInput) metresInput.value = '1';
+      }
+    }
+  },
+  
+  updateMaterialInfo(selected) {
+    const infoEl = document.getElementById('material-remaining-info');
+    if (!infoEl || !selected) return;
+    
+    const remaining = parseFloat(selected.remaining);
+    const color = selected.colorName;
+    const size = selected.size || '1';
+    const stickerType = selected.stickerType || 'colored';
+    
+    infoEl.textContent = `${color} - ${size}m ${stickerType} (${remaining.toFixed(1)}m available)`;
   },
 
   bindEvents() {
@@ -130,9 +193,13 @@ const ServicesPage = {
         // Reset dropdowns
         this.serviceDropdown?.reset();
         this.paymentDropdown?.reset();
+        this.materialColorDropdown?.reset();
         // Re-select payment default
         const paymentContainer = document.getElementById('service-payment-dropdown');
         if (paymentContainer) this.paymentDropdown?.selectItem(paymentContainer.querySelector('.dropdown-item'));
+        // Hide stock selection
+        this.toggleStockSelection(false);
+        this.currentSelectedService = null;
       }
     };
 
@@ -167,6 +234,7 @@ const ServicesPage = {
       description: formData.get('description'),
       price: parseFloat(formData.get('price')),
       unit: formData.get('unit'),
+      uses_stock: formData.get('uses_stock') ? 1 : 0,
       is_active: 1
     };
 
@@ -189,6 +257,30 @@ const ServicesPage = {
       return;
     }
 
+    // Validate stock if service uses stock
+    const stockId = formData.get('stock_id') ? parseInt(formData.get('stock_id')) : null;
+    const metresUsed = formData.get('stock_metres_used') ? parseFloat(formData.get('stock_metres_used')) : 0;
+    
+    if (service.uses_stock && (!stockId || metresUsed <= 0)) {
+      Toast.error('Stock Required', 'Please select material and specify metres to use');
+      return;
+    }
+    
+    // Validate stock availability
+    if (stockId && metresUsed > 0) {
+      const stockItem = Store.getStock(stockId);
+      if (!stockItem) {
+        Toast.error('Stock Not Found', 'Selected stock material not found');
+        return;
+      }
+      
+      const remaining = stockItem.total_metres - stockItem.metres_used;
+      if (metresUsed > remaining) {
+        Toast.error('Insufficient Stock', `Only ${remaining.toFixed(1)}m available`);
+        return;
+      }
+    }
+
     const amount = service.price * quantity;
     const transaction = {
       service_id: serviceId,
@@ -198,11 +290,21 @@ const ServicesPage = {
       amount: amount,
       payment_method: formData.get('payment_method') || 'cash',
       customer_name: formData.get('customer_name') || 'Walk-in',
-      notes: formData.get('notes') || null
+      notes: formData.get('notes') || null,
+      stock_id: stockId,
+      stock_metres_used: metresUsed,
+      material_size: stockId ? Store.getStock(stockId)?.size : null,
+      material_type: stockId ? Store.getStock(stockId)?.sticker_type : null
     };
 
-    await Store.addServiceTransaction(transaction);
-    Toast.success('Transaction Recorded', `${service.name} - KSh ${amount.toLocaleString()}`);
+    const result = await Store.addServiceTransaction(transaction);
+    
+    if (result && result.success === false) {
+      Toast.error('Transaction Failed', result.error);
+      return;
+    }
+    
+    Toast.success('Transaction Recorded', `${service.name} - KSh ${amount.toLocaleString()}${metresUsed > 0 ? ` (${metresUsed}m used)` : ''}`);
   },
 
   updateServiceDropdownItems() {
@@ -215,6 +317,7 @@ const ServicesPage = {
       label: s.name,
       price: s.price,
       unit: s.unit || '',
+      uses_stock: s.uses_stock || 0,
       badge: `KSh ${s.price.toLocaleString()}`
     })));
   },
@@ -275,6 +378,10 @@ const ServicesPage = {
               '<span class="status-badge status-badge--success text-xs">Active</span>' : 
               '<span class="status-badge status-badge--pending text-xs">Inactive</span>'
             }
+            ${service.uses_stock ? 
+              '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>Uses Stock</span>' : 
+              ''
+            }
           </div>
           ${service.description ? `<p class="text-xs text-gray-500 mt-1">${service.description}</p>` : ''}
           <p class="text-sm font-medium text-gray-900 mt-2">
@@ -314,11 +421,12 @@ const ServicesPage = {
 
     tbody.innerHTML = todayTransactions.map(t => {
       const time = new Date(t.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+      const stockInfo = t.stock_metres_used > 0 ? ` (${t.stock_metres_used}m)` : '';
       return `
         <tr class="hover:bg-gray-50 transition-colors">
           <td class="px-5 py-4">
             <div>
-              <p class="text-sm font-medium text-gray-900">${t.service_name}</p>
+              <p class="text-sm font-medium text-gray-900">${t.service_name}${stockInfo}</p>
               <p class="text-xs text-gray-500">${time}</p>
             </div>
           </td>

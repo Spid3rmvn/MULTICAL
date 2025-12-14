@@ -81,6 +81,11 @@ ipcMain.handle('db:sales:getTodayTotal', () => {
   return database.getTodayTotalSales();
 });
 
+ipcMain.handle('db:sales:delete', (event, id) => {
+  database.deleteSale(id);
+  return { success: true };
+});
+
 // ==================== Debts ====================
 
 ipcMain.handle('db:debts:getAll', () => {
@@ -115,6 +120,21 @@ ipcMain.handle('db:debts:getPaidThisMonth', () => {
 
 ipcMain.handle('db:debts:getOverdue', () => {
   return database.getOverdueDebts();
+});
+
+// ==================== Debt Payments ====================
+
+ipcMain.handle('db:debtPayments:add', (event, payment) => {
+  return database.addDebtPayment(payment);
+});
+
+ipcMain.handle('db:debtPayments:getByDebt', (event, debtId) => {
+  return database.getDebtPayments(debtId);
+});
+
+ipcMain.handle('db:debtPayments:delete', (event, id) => {
+  database.deleteDebtPayment(id);
+  return { success: true };
 });
 
 // ==================== Services ====================
@@ -165,6 +185,35 @@ ipcMain.handle('db:serviceTransactions:getTodayTotal', () => {
 
 ipcMain.handle('db:serviceTransactions:getTotal', () => {
   return database.getTotalServiceEarnings();
+});
+
+ipcMain.handle('db:serviceTransactions:delete', (event, id) => {
+  database.deleteServiceTransaction(id);
+  return { success: true };
+});
+
+// ==================== Printing Materials ====================
+
+ipcMain.handle('db:printingMaterials:getAll', () => {
+  return database.getAllPrintingMaterials();
+});
+
+ipcMain.handle('db:printingMaterials:get', (event, id) => {
+  return database.getPrintingMaterial(id);
+});
+
+ipcMain.handle('db:printingMaterials:add', (event, material) => {
+  return database.addPrintingMaterial(material);
+});
+
+ipcMain.handle('db:printingMaterials:update', (event, id, updates) => {
+  database.updatePrintingMaterial(id, updates);
+  return { success: true };
+});
+
+ipcMain.handle('db:printingMaterials:delete', (event, id) => {
+  database.deletePrintingMaterial(id);
+  return { success: true };
 });
 
 // ==================== Migration ====================

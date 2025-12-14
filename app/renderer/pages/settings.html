@@ -1,0 +1,287 @@
+<!-- Settings Page Content -->
+<div id="page-settings" class="page-content animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage your application preferences and business information</p>
+        </div>
+    </div>
+
+    <!-- Settings Tabs -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="flex gap-8">
+                <button id="tab-general"
+                    class="settings-tab active pb-4 px-2 text-sm font-medium border-b-2 border-black text-gray-900 transition-colors">
+                    General
+                </button>
+                <button id="tab-business"
+                    class="settings-tab pb-4 px-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
+                    Business Info
+                </button>
+                <button id="tab-pricing"
+                    class="settings-tab pb-4 px-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
+                    Pricing
+                </button>
+                <button id="tab-backup"
+                    class="settings-tab pb-4 px-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
+                    Backup & Data
+                </button>
+                <button id="tab-about"
+                    class="settings-tab pb-4 px-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
+                    About
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- General Settings Panel -->
+    <div id="panel-general" class="settings-panel">
+        <div class="dashboard-panel p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Currency Settings</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                    <div id="currency-dropdown"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Currency Symbol</label>
+                    <input type="text" id="currency-symbol" value="KSh" class="w-full" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Date & Time</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                    <div id="date-format-dropdown"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Time Format</label>
+                    <div id="time-format-dropdown"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Display Options</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Show Decimals in Currency</p>
+                        <p class="text-xs text-gray-500">Display amounts with 2 decimal places</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="show-decimals" class="sr-only peer" checked>
+                        <div
+                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black">
+                        </div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Show Low Stock Alerts</p>
+                        <p class="text-xs text-gray-500">Get notified when stock is running low</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="low-stock-alerts" class="sr-only peer" checked>
+                        <div
+                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-black">
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Info Panel -->
+    <div id="panel-business" class="settings-panel hidden">
+        <div class="dashboard-panel p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Business Information</h3>
+            <form id="business-info-form" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                        <input type="text" id="business-name" class="w-full" placeholder="Your Business Name" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" id="business-phone" class="w-full" placeholder="+254 700 000 000">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="business-email" class="w-full" placeholder="info@business.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tax PIN</label>
+                        <input type="text" id="business-pin" class="w-full" placeholder="A000000000X">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Physical Address</label>
+                        <textarea id="business-address" rows="2" class="w-full"
+                            placeholder="Street address, City, Postal Code"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-4 border-t border-gray-100">
+                    <button type="submit" class="btn-primary px-6 py-2 rounded-lg shadow-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pricing Panel -->
+    <div id="panel-pricing" class="settings-panel hidden">
+        <div class="dashboard-panel p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Default Pricing</h3>
+            <p class="text-sm text-gray-500 mb-4">Set default prices for common services and products</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sticker Price per Metre (KSh)</label>
+                    <input type="number" id="default-sticker-price" class="w-full" placeholder="10" step="0.01" min="0">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Printing Price per SQM (KSh)</label>
+                    <input type="number" id="default-printing-price" class="w-full" placeholder="100" step="0.01"
+                        min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Profit Margins</h3>
+            <p class="text-sm text-gray-500 mb-4">Configure default markup percentages for products</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Life Saver Markup (%)</label>
+                    <input type="number" id="life-saver-markup" class="w-full" placeholder="30" min="0" max="100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Chevron Markup (%)</label>
+                    <input type="number" id="chevron-markup" class="w-full" placeholder="30" min="0" max="100">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stripes Markup (%)</label>
+                    <input type="number" id="stripes-markup" class="w-full" placeholder="30" min="0" max="100">
+                </div>
+            </div>
+            <div class="flex justify-end pt-4 border-t border-gray-100 mt-4">
+                <button id="save-pricing" class="btn-primary px-6 py-2 rounded-lg shadow-sm">Save Pricing</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup & Data Panel -->
+    <div id="panel-backup" class="settings-panel hidden">
+        <div class="dashboard-panel p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Database Backup</h3>
+            <p class="text-sm text-gray-500 mb-4">Export or import your business data</p>
+            <div class="space-y-3">
+                <button id="btn-export-data"
+                    class="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Export Database</p>
+                            <p class="text-xs text-gray-500">Download all your data as JSON file</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+
+                <button id="btn-import-data"
+                    class="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-medium text-gray-900">Import Database</p>
+                            <p class="text-xs text-gray-500">Restore data from backup file</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6 bg-red-50 border border-red-200">
+            <h3 class="text-lg font-semibold text-red-900 mb-2">Danger Zone</h3>
+            <p class="text-sm text-red-700 mb-4">Irreversible actions - proceed with caution</p>
+            <button id="btn-clear-data"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors">
+                Clear All Data
+            </button>
+        </div>
+    </div>
+
+    <!-- About Panel -->
+    <div id="panel-about" class="settings-panel hidden">
+        <div class="dashboard-panel p-6 mb-6">
+            <div class="text-center py-8">
+                <div class="w-20 h-20 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl font-bold text-white">M</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">MULTICAL</h3>
+                <p class="text-sm text-gray-500 mb-6">Business Management System</p>
+                <div class="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
+                    <span class="text-sm font-medium text-gray-700">Version</span>
+                    <span class="text-sm font-bold text-gray-900" id="app-version">1.0.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6 mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
+            <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600">Platform</span>
+                    <span class="text-sm font-medium text-gray-900" id="platform-info">Electron</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600">Database</span>
+                    <span class="text-sm font-medium text-gray-900">SQLite</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-sm text-gray-600">Last Backup</span>
+                    <span class="text-sm font-medium text-gray-900" id="last-backup">Never</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Support</h3>
+            <div class="space-y-3">
+                <a href="#"
+                    class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <span class="text-sm font-medium text-gray-900">Documentation</span>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                </a>
+                <a href="#"
+                    class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <span class="text-sm font-medium text-gray-900">Report Issue</span>
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -177,6 +177,13 @@ class CustomDropdown {
     });
   }
 
+  setValue(value) {
+    const itemEl = this.menu.querySelector(`[data-value="${value}"]`);
+    if (itemEl) {
+      this.selectItem(itemEl);
+    }
+  }
+
   // Color helper (same as StockPage)
   getColorHex(colorName) {
     const colors = {
@@ -197,3 +204,48 @@ class CustomDropdown {
 
 // Make globally available
 window.CustomDropdown = CustomDropdown;
+
+/**
+ * Simplified Dropdown wrapper for common use cases
+ */
+class Dropdown {
+  constructor(containerId, options = {}) {
+    this.customDropdown = new CustomDropdown(containerId, {
+      placeholder: options.placeholder || 'Select',
+      items: options.items || [],
+      showColorSwatch: options.showColorSwatch || false,
+      onSelect: (item) => {
+        if (options.onChange) {
+          options.onChange(item.value, item);
+        }
+      }
+    });
+
+    // Set initial selected value if provided
+    if (options.selected) {
+      this.setValue(options.selected);
+    }
+  }
+
+  getValue() {
+    return this.customDropdown.getValue();
+  }
+
+  getSelected() {
+    return this.customDropdown.getSelected();
+  }
+
+  setValue(value) {
+    this.customDropdown.setValue(value);
+  }
+
+  setItems(items) {
+    this.customDropdown.setItems(items);
+  }
+
+  reset() {
+    this.customDropdown.reset();
+  }
+}
+
+window.Dropdown = Dropdown;
