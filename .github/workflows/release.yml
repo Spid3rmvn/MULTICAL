@@ -71,7 +71,7 @@ jobs:
             app/dist/*.yml
             app/dist/*.yaml
             app/dist/*.blockmap
-          retention-days: 30
+          retention-days: 3
           if-no-files-found: warn
 
   release:
