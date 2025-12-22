@@ -31,9 +31,12 @@ const DashboardPage = {
       if (welcomeEl) {
           const hour = new Date().getHours();
           let greeting = 'Good Morning';
-          if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
-          else if (hour >= 17) greeting = 'Good Evening';
-          welcomeEl.textContent = `${greeting}, Andrew`;
+          if (hour >= 12 && hour < 18) {
+              greeting = 'Good Afternoon';
+          } else if (hour >= 18) {
+              greeting = 'Good Evening';
+          }
+          welcomeEl.textContent = `${greeting}, Admin`;
       }
   },
 
@@ -300,3 +303,6 @@ const DashboardPage = {
       }).join('');
   }
 };
+
+// Make globally available
+window.DashboardPage = DashboardPage;

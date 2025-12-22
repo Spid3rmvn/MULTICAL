@@ -7,6 +7,8 @@ const ProductsPage = {
   selectedProductType: 'life_saver',
   selectedColor: 'white_red',
   selectedSize: '1x1',
+  currentPage: 1,
+  itemsPerPage: 10,
 
   init() {
     this.bindEvents();
@@ -318,10 +320,17 @@ const ProductsPage = {
           </td>
         </tr>
       `;
+      this.updatePaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = products.map(product => {
+    // Calculate pagination
+    const totalPages = Math.ceil(products.length / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedProducts = products.slice(startIndex, endIndex);
+
+    tbody.innerHTML = paginatedProducts.map(product => {
       const typeConfig = PRODUCT_TYPES[product.product_type] || PRODUCT_TYPES.life_saver;
       const colorConfig = product.color ? PRODUCT_COLORS[product.color] : null;
       
@@ -348,7 +357,7 @@ const ProductsPage = {
             <span class="status-badge ${product.stock > 10 ? 'status-badge--success' : product.stock > 0 ? 'status-badge--warning' : 'status-badge--error'}">
                ${product.stock} Units
             </span>
-            <button onclick="ProductsPage.addStock(${product.id})" class="text-xs text-gray-500 hover:text-black font-medium">+ Add</button>
+            <button onclick="ProductsPage.addStock(${product.id})" class="px-2 py-1 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 transition-colors">+ Add</button>
           </div>
         </td>
         <td class="px-6 py-4">
@@ -360,18 +369,156 @@ const ProductsPage = {
         </td>
       </tr>
     `}).join('');
+
+    // Update pagination controls
+    this.updatePaginationControls(products.length);
+  },
+
+  updatePaginationControls(totalItems) {
+    const paginationEl = document.getElementById('products-pagination');
+    if (!paginationEl) return;
+
+    if (totalItems === 0) {
+      paginationEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    paginationEl.innerHTML = `
+      <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> products
+        </div>
+        <div class="flex gap-2">
+          <button onclick="ProductsPage.previousPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === 1 ? 'disabled' : ''}>
+            Previous
+          </button>
+          <span class="px-3 py-1 text-sm font-medium text-gray-700">
+            Page ${this.currentPage} of ${totalPages}
+          </span>
+          <button onclick="ProductsPage.nextPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === totalPages ? 'disabled' : ''}>
+            Next
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  nextPage() {
+    const totalPages = Math.ceil(Store.products.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.render();
+    }
+  },
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.render();
+    }
   },
 
   addStock(id) {
     const product = Store.getProduct(id);
     if (!product) return;
 
-    const qty = prompt(`Add stock for ${product.name}:\nEnter quantity to add:`);
-    if (qty && parseInt(qty) > 0) {
-      const addedQty = parseInt(qty);
-      Store.updateProduct(id, { stock: product.stock + addedQty });
-      Toast.success('Stock Added', `Added ${addedQty} units to ${product.name}`);
+    const typeConfig = PRODUCT_TYPES[product.product_type] || PRODUCT_TYPES.life_saver;
+
+    // Create modal HTML
+    const modalHTML = `
+      <div id="modal-add-product-stock" class="modal-overlay open">
+        <div class="modal-container" style="max-width: 500px;">
+          <div class="modal-header">
+            <h3 class="modal-title">Add Product Stock</h3>
+            <button class="modal-close-btn" onclick="ProductsPage.closeAddStockModal()">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <p class="text-sm text-gray-500">Product</p>
+              <p class="font-semibold text-gray-900">${product.name}</p>
+              <p class="text-sm text-gray-600 mt-1">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${typeConfig.badgeClass}">
+                  ${typeConfig.name}
+                </span>
+                <span class="ml-2">Current stock: ${product.stock} units</span>
+              </p>
+            </div>
+            
+            <form id="add-product-stock-form" class="space-y-4">
+              <input type="hidden" id="add-stock-product-id" value="${id}">
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quantity to Add *</label>
+                <input type="number" id="add-stock-quantity-input" min="1" step="1" class="w-full" placeholder="Enter units to add" required autofocus>
+                <p class="text-xs text-gray-500 mt-1">Add units to existing stock</p>
+              </div>
+              
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p class="text-sm text-gray-700">
+                  <span class="font-medium">New Total Stock:</span> 
+                  <span id="new-total-stock">${product.stock}</span> units
+                </p>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" onclick="ProductsPage.closeAddStockModal()">Cancel</button>
+            <button type="button" class="btn-primary px-4 py-2 rounded-lg" onclick="ProductsPage.submitAddStock()">Add Stock</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add modal to page
+    const existingModal = document.getElementById('modal-add-product-stock');
+    if (existingModal) existingModal.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listener for real-time calculation
+    const qtyInput = document.getElementById('add-stock-quantity-input');
+    if (qtyInput) {
+      qtyInput.addEventListener('input', () => {
+        const additionalQty = parseInt(qtyInput.value) || 0;
+        const newTotalStock = product.stock + additionalQty;
+        
+        document.getElementById('new-total-stock').textContent = newTotalStock;
+      });
     }
+  },
+
+  closeAddStockModal() {
+    const modal = document.getElementById('modal-add-product-stock');
+    if (modal) modal.remove();
+  },
+
+  submitAddStock() {
+    const productId = parseInt(document.getElementById('add-stock-product-id').value);
+    const qty = parseInt(document.getElementById('add-stock-quantity-input').value);
+
+    if (!qty || qty <= 0) {
+      Toast.error('Invalid Input', 'Please enter a valid quantity');
+      return;
+    }
+
+    const product = Store.getProduct(productId);
+    if (product) {
+      Store.updateProduct(productId, { stock: product.stock + qty });
+      Toast.success('Stock Added', `Added ${qty} unit${qty > 1 ? 's' : ''} to ${product.name}`);
+    }
+
+    this.closeAddStockModal();
   },
 
   delete(id) {

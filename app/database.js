@@ -365,18 +365,24 @@ class DatabaseManager {
   }
 
   addDebt(debt) {
+    // Calculate paid_amount and remaining_amount if not provided
+    const paidAmount = debt.paid_amount !== undefined ? debt.paid_amount : 0;
+    const remainingAmount = debt.remaining_amount !== undefined ? debt.remaining_amount : (debt.amount - paidAmount);
+    
     const stmt = this.db.prepare(`
       INSERT INTO debts (customer_name, phone, amount, paid_amount, remaining_amount, due_date, description, status)
-      VALUES (@customer_name, @phone, @amount, 0, @amount, @due_date, @description, 'pending')
+      VALUES (@customer_name, @phone, @amount, @paid_amount, @remaining_amount, @due_date, @description, 'pending')
     `);
     const result = stmt.run({
       customer_name: debt.customer_name,
       phone: debt.phone || null,
       amount: debt.amount,
+      paid_amount: paidAmount,
+      remaining_amount: remainingAmount,
       due_date: debt.due_date || null,
       description: debt.description || null
     });
-    return { ...debt, id: result.lastInsertRowid, status: 'pending', paid_amount: 0, remaining_amount: debt.amount, created_at: new Date().toISOString() };
+    return { ...debt, id: result.lastInsertRowid, status: 'pending', paid_amount: paidAmount, remaining_amount: remainingAmount, created_at: new Date().toISOString() };
   }
 
   markDebtPaid(id) {

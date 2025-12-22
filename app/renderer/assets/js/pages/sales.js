@@ -14,6 +14,8 @@ const SalesPage = {
   pickerMonth: new Date().getMonth(),
   pickerYear: new Date().getFullYear(),
   pickerSelectedDate: null,
+  currentPage: 1,
+  itemsPerPage: 10,
 
   init() {
     this.initCustomDropdowns();
@@ -633,9 +635,9 @@ const SalesPage = {
     const tbody = document.getElementById('sales-table-body');
     if (!tbody) return;
 
-    const todaySales = Store.getTodaySales();
+    const allSales = Store.sales;
 
-    if (todaySales.length === 0) {
+    if (allSales.length === 0) {
       tbody.innerHTML = `
         <tr class="text-center">
             <td colspan="7" class="px-5 py-8 text-gray-500">
@@ -643,15 +645,22 @@ const SalesPage = {
                     <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
-                    <p>No sales recorded today.</p>
+                    <p>No sales recorded.</p>
                 </div>
             </td>
         </tr>
       `;
+      this.updatePaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = todaySales.map(sale => {
+    // Calculate pagination
+    const totalPages = Math.ceil(allSales.length / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedSales = allSales.slice(startIndex, endIndex);
+
+    tbody.innerHTML = paginatedSales.map(sale => {
       const saleDate = new Date(sale.timestamp);
       const today = new Date();
       const isToday = saleDate.toDateString() === today.toDateString();
@@ -697,6 +706,61 @@ const SalesPage = {
         </td>
       </tr>
     `}).join('');
+
+    // Update pagination controls
+    this.updatePaginationControls(allSales.length);
+  },
+
+  updatePaginationControls(totalItems) {
+    const paginationEl = document.getElementById('sales-pagination');
+    if (!paginationEl) return;
+
+    if (totalItems === 0) {
+      paginationEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    paginationEl.innerHTML = `
+      <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> sales
+        </div>
+        <div class="flex gap-2">
+          <button onclick="SalesPage.previousPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === 1 ? 'disabled' : ''}>
+            Previous
+          </button>
+          <span class="px-3 py-1 text-sm font-medium text-gray-700">
+            Page ${this.currentPage} of ${totalPages}
+          </span>
+          <button onclick="SalesPage.nextPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === totalPages ? 'disabled' : ''}>
+            Next
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  nextPage() {
+    const totalPages = Math.ceil(Store.sales.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.render();
+    }
+  },
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.render();
+    }
   },
 
   updateStats() {
@@ -1082,11 +1146,21 @@ const SalesPage = {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const formattedDisplay = `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     
-    const hiddenInput = document.getElementById('convert-due-date');
-    const displayInput = document.getElementById('convert-due-date-display');
-    
-    if (hiddenInput) hiddenInput.value = formattedValue;
-    if (displayInput) displayInput.value = formattedDisplay;
+    // Check if this is for the convert debt modal or printing debt modal
+    if (this.pickerCallback === 'convertDebt' && window.convertDebtDateCallback) {
+      window.convertDebtDateCallback(formattedValue, formattedDisplay);
+      this.pickerCallback = null;
+    } else if (this.pickerCallback === 'convertPrintingDebt' && window.convertPrintingDebtDateCallback) {
+      window.convertPrintingDebtDateCallback(formattedValue, formattedDisplay);
+      this.pickerCallback = null;
+    } else {
+      // Normal sales conversion
+      const hiddenInput = document.getElementById('convert-due-date');
+      const displayInput = document.getElementById('convert-due-date-display');
+      
+      if (hiddenInput) hiddenInput.value = formattedValue;
+      if (displayInput) displayInput.value = formattedDisplay;
+    }
     
     this.renderDatePicker();
   }

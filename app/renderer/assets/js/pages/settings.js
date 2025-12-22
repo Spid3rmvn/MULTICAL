@@ -26,13 +26,17 @@ const SettingsPage = {
   },
 
   init() {
+    this.isInitializing = true;
     this.loadSettings();
     this.initializeDropdowns();
     this.bindEvents();
     this.loadAppVersion();
     this.loadPlatformInfo();
     // Mark initialization as complete - toasts will now be shown
-    this.isInitializing = false;
+    // Use setTimeout to ensure all initialization is truly complete
+    setTimeout(() => {
+      this.isInitializing = false;
+    }, 100);
   },
 
   initializeDropdowns() {

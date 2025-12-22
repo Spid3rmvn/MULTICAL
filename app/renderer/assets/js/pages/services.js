@@ -8,6 +8,8 @@ const ServicesPage = {
   paymentDropdown: null,
   materialColorDropdown: null,
   currentSelectedService: null,
+  currentPage: 1,
+  itemsPerPage: 10,
 
   init() {
     this.initCustomDropdowns();
@@ -408,18 +410,25 @@ const ServicesPage = {
     const tbody = document.getElementById('transactions-table-body');
     if (!tbody) return;
 
-    const todayTransactions = Store.getTodayServiceTransactions();
+    const allTransactions = Store.serviceTransactions.filter(t => !t.stock_metres_used || t.stock_metres_used === 0);
 
-    if (todayTransactions.length === 0) {
+    if (allTransactions.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="4" class="px-5 py-8 text-center text-gray-500">No transactions today.</td>
+          <td colspan="4" class="px-5 py-8 text-center text-gray-500">No transactions recorded.</td>
         </tr>
       `;
+      this.updatePaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = todayTransactions.map(t => {
+    // Calculate pagination
+    const totalPages = Math.ceil(allTransactions.length / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedTransactions = allTransactions.slice(startIndex, endIndex);
+
+    tbody.innerHTML = paginatedTransactions.map(t => {
       const time = new Date(t.timestamp).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
       const stockInfo = t.stock_metres_used > 0 ? ` (${t.stock_metres_used}m)` : '';
       return `
@@ -436,6 +445,62 @@ const ServicesPage = {
         </tr>
       `;
     }).join('');
+
+    // Update pagination controls
+    this.updatePaginationControls(allTransactions.length);
+  },
+
+  updatePaginationControls(totalItems) {
+    const paginationEl = document.getElementById('services-pagination');
+    if (!paginationEl) return;
+
+    if (totalItems === 0) {
+      paginationEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    paginationEl.innerHTML = `
+      <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> transactions
+        </div>
+        <div class="flex gap-2">
+          <button onclick="ServicesPage.previousPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === 1 ? 'disabled' : ''}>
+            Previous
+          </button>
+          <span class="px-3 py-1 text-sm font-medium text-gray-700">
+            Page ${this.currentPage} of ${totalPages}
+          </span>
+          <button onclick="ServicesPage.nextPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === totalPages ? 'disabled' : ''}>
+            Next
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  nextPage() {
+    const allTransactions = Store.serviceTransactions.filter(t => !t.stock_metres_used || t.stock_metres_used === 0);
+    const totalPages = Math.ceil(allTransactions.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.renderTransactions();
+    }
+  },
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.renderTransactions();
+    }
   },
 
   updateStats() {

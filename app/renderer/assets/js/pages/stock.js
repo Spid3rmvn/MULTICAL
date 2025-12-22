@@ -6,6 +6,8 @@
 const StockPage = {
   metresPerRoll: 50, // 1 roll = 50 metres
   selectedStickerType: 'colored', // Default sticker type
+  currentPage: 1,
+  itemsPerPage: 10,
 
   init() {
     this.sizeRowIdCounter = 0;
@@ -504,10 +506,17 @@ const StockPage = {
             </td>
         </tr>
       `;
+      this.updatePaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = stock.map(item => {
+    // Calculate pagination
+    const totalPages = Math.ceil(stock.length / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedStock = stock.slice(startIndex, endIndex);
+
+    tbody.innerHTML = paginatedStock.map(item => {
       const remaining = Store.getRemainingMetres(item.id);
       const rollsLeft = Store.getRemainingRolls(item.id);
       const status = this.getStockStatus(remaining, item.total_metres);
@@ -540,7 +549,7 @@ const StockPage = {
           </td>
           <td class="px-6 py-4">
             <div class="flex gap-2">
-              <button onclick="StockPage.addMoreRolls(${item.id})" class="text-black hover:text-gray-700 text-sm font-medium">Add Rolls</button>
+              <button onclick="StockPage.addMoreRolls(${item.id})" class="px-3 py-1 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 transition-colors">Add Rolls</button>
               <button onclick="StockPage.delete(${item.id})" class="text-gray-400 hover:text-red-600 transition-colors">
                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -551,6 +560,61 @@ const StockPage = {
         </tr>
       `;
     }).join('');
+
+    // Update pagination controls
+    this.updatePaginationControls(stock.length);
+  },
+
+  updatePaginationControls(totalItems) {
+    const paginationEl = document.getElementById('stock-pagination');
+    if (!paginationEl) return;
+
+    if (totalItems === 0) {
+      paginationEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    paginationEl.innerHTML = `
+      <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> stock items
+        </div>
+        <div class="flex gap-2">
+          <button onclick="StockPage.previousPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === 1 ? 'disabled' : ''}>
+            Previous
+          </button>
+          <span class="px-3 py-1 text-sm font-medium text-gray-700">
+            Page ${this.currentPage} of ${totalPages}
+          </span>
+          <button onclick="StockPage.nextPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === totalPages ? 'disabled' : ''}>
+            Next
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  nextPage() {
+    const totalPages = Math.ceil(Store.stock.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.render();
+    }
+  },
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.render();
+    }
   },
 
   // Try to get a CSS color from common color names
@@ -624,10 +688,99 @@ const StockPage = {
   },
 
   addMoreRolls(id) {
-    const rolls = prompt('Enter number of rolls to add:');
-    if (rolls && parseInt(rolls) > 0) {
-      Store.addRollsToStock(id, parseInt(rolls));
+    const stockItem = Store.getStock(id);
+    if (!stockItem) return;
+
+    const typeConfig = STICKER_TYPES[stockItem.sticker_type] || STICKER_TYPES.colored;
+    const remaining = Store.getRemainingMetres(id);
+    const rollsLeft = Store.getRemainingRolls(id);
+
+    // Create modal HTML
+    const modalHTML = `
+      <div id="modal-add-rolls" class="modal-overlay open">
+        <div class="modal-container" style="max-width: 500px;">
+          <div class="modal-header">
+            <h3 class="modal-title">Add Rolls to Stock</h3>
+            <button class="modal-close-btn" onclick="StockPage.closeAddRollsModal()">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <p class="text-sm text-gray-500">Stock Item</p>
+              <p class="font-semibold text-gray-900">${stockItem.color} - ${stockItem.size || '1'}" ${typeConfig.name}</p>
+              <p class="text-sm text-gray-600 mt-1">Current: ${remaining.toLocaleString()}m remaining (${rollsLeft} rolls)</p>
+            </div>
+            
+            <form id="add-rolls-form" class="space-y-4">
+              <input type="hidden" id="add-rolls-stock-id" value="${id}">
+              
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Number of Rolls to Add *</label>
+                <input type="number" id="add-rolls-input" min="1" step="1" class="w-full" placeholder="Enter rolls to add" required autofocus>
+                <p class="text-xs text-gray-500 mt-1">Each roll = ${stockItem.metres_per_roll || 50}m</p>
+              </div>
+              
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p class="text-sm text-gray-700">
+                  <span class="font-medium">New Total:</span> 
+                  <span id="new-total-rolls">${stockItem.rolls}</span> rolls 
+                  (<span id="new-total-metres">${stockItem.total_metres.toLocaleString()}</span>m)
+                </p>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" onclick="StockPage.closeAddRollsModal()">Cancel</button>
+            <button type="button" class="btn-primary px-4 py-2 rounded-lg" onclick="StockPage.submitAddRolls()">Add Rolls</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Add modal to page
+    const existingModal = document.getElementById('modal-add-rolls');
+    if (existingModal) existingModal.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listener for real-time calculation
+    const rollsInput = document.getElementById('add-rolls-input');
+    if (rollsInput) {
+      rollsInput.addEventListener('input', () => {
+        const additionalRolls = parseInt(rollsInput.value) || 0;
+        const metresPerRoll = stockItem.metres_per_roll || 50;
+        const newTotalRolls = stockItem.rolls + additionalRolls;
+        const newTotalMetres = stockItem.total_metres + (additionalRolls * metresPerRoll);
+        
+        document.getElementById('new-total-rolls').textContent = newTotalRolls;
+        document.getElementById('new-total-metres').textContent = newTotalMetres.toLocaleString();
+      });
     }
+  },
+
+  closeAddRollsModal() {
+    const modal = document.getElementById('modal-add-rolls');
+    if (modal) modal.remove();
+  },
+
+  submitAddRolls() {
+    const stockId = parseInt(document.getElementById('add-rolls-stock-id').value);
+    const rolls = parseInt(document.getElementById('add-rolls-input').value);
+
+    if (!rolls || rolls <= 0) {
+      Toast.error('Invalid Input', 'Please enter a valid number of rolls');
+      return;
+    }
+
+    const stockItem = Store.getStock(stockId);
+    if (stockItem) {
+      Store.addRollsToStock(stockId, rolls);
+      Toast.success('Rolls Added', `Added ${rolls} roll${rolls > 1 ? 's' : ''} to ${stockItem.color}`);
+    }
+
+    this.closeAddRollsModal();
   },
 
   delete(id) {

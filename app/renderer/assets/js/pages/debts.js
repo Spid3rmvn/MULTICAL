@@ -11,6 +11,8 @@ const DebtsPage = {
   pickerSelectedDate: null,
   paymentMethodDropdown: null,
   currentDebtId: null,
+  currentPage: 1,
+  itemsPerPage: 10,
 
   init() {
     this.initPaymentDropdown();
@@ -294,9 +296,9 @@ const DebtsPage = {
     const tbody = document.getElementById('debts-table-body');
     if (!tbody) return;
 
-    const pendingDebts = Store.getPendingDebts();
+    const allDebts = Store.debts;
 
-    if (pendingDebts.length === 0) {
+    if (allDebts.length === 0) {
       tbody.innerHTML = `
         <tr class="text-center">
             <td colspan="8" class="px-5 py-8 text-gray-500">
@@ -309,17 +311,35 @@ const DebtsPage = {
             </td>
         </tr>
       `;
+      this.updatePaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = pendingDebts.map(debt => {
-      const isOverdue = debt.due_date && new Date(debt.due_date) < new Date();
+    // Calculate pagination
+    const totalPages = Math.ceil(allDebts.length / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedDebts = allDebts.slice(startIndex, endIndex);
+
+    tbody.innerHTML = paginatedDebts.map(debt => {
+      const isPaid = debt.status === 'paid';
+      const isOverdue = !isPaid && debt.due_date && new Date(debt.due_date) < new Date();
       const paidAmount = debt.paid_amount || 0;
       const remainingAmount = debt.remaining_amount || debt.amount;
       const hasPayments = paidAmount > 0;
       
+      // Determine status badge
+      let statusBadge = '';
+      if (isPaid) {
+        statusBadge = '<span class="status-badge status-badge--success">Paid</span>';
+      } else if (isOverdue) {
+        statusBadge = '<span class="status-badge status-badge--error">Overdue</span>';
+      } else {
+        statusBadge = '<span class="status-badge status-badge--pending">Pending</span>';
+      }
+      
       return `
-        <tr class="hover:bg-gray-50 transition-colors">
+        <tr class="hover:bg-gray-50 transition-colors ${isPaid ? 'opacity-60' : ''}">
           <td class="px-5 py-4 text-sm font-medium text-gray-900">${debt.customer_name}</td>
           <td class="px-5 py-4 text-sm text-gray-600">${debt.phone || '-'}</td>
           <td class="px-5 py-4 text-sm font-medium text-gray-900">KSh ${debt.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
@@ -327,15 +347,17 @@ const DebtsPage = {
           <td class="px-5 py-4 text-sm font-medium text-red-600">KSh ${remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
           <td class="px-5 py-4 text-sm text-gray-600">${debt.due_date || '-'}</td>
           <td class="px-5 py-4">
-            <span class="status-badge ${isOverdue ? 'status-badge--error' : 'status-badge--pending'}">${isOverdue ? 'Overdue' : 'Pending'}</span>
+            ${statusBadge}
           </td>
           <td class="px-5 py-4">
             <div class="flex items-center gap-2">
-              <button onclick="DebtsPage.recordPayment(${debt.id})" 
-                class="text-sm font-medium px-3 py-1 rounded-md ${hasPayments ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} transition-colors"
-                title="Record payment">
-                ${hasPayments ? 'Add Payment' : 'Pay'}
-              </button>
+              ${!isPaid ? `
+                <button onclick="DebtsPage.recordPayment(${debt.id})" 
+                  class="text-sm font-medium px-3 py-1 rounded-md ${hasPayments ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} transition-colors"
+                  title="Record payment">
+                  ${hasPayments ? 'Add Payment' : 'Pay'}
+                </button>
+              ` : ''}
               ${hasPayments ? `
                 <button onclick="DebtsPage.viewPaymentHistory(${debt.id})" 
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -356,6 +378,61 @@ const DebtsPage = {
         </tr>
       `;
     }).join('');
+
+    // Update pagination controls
+    this.updatePaginationControls(allDebts.length);
+  },
+
+  updatePaginationControls(totalItems) {
+    const paginationEl = document.getElementById('debts-pagination');
+    if (!paginationEl) return;
+
+    if (totalItems === 0) {
+      paginationEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    paginationEl.innerHTML = `
+      <div class="flex items-center justify-between px-5 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="text-sm text-gray-600">
+          Showing <span class="font-medium">${startItem}</span> to <span class="font-medium">${endItem}</span> of <span class="font-medium">${totalItems}</span> debts
+        </div>
+        <div class="flex gap-2">
+          <button onclick="DebtsPage.previousPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === 1 ? 'disabled' : ''}>
+            Previous
+          </button>
+          <span class="px-3 py-1 text-sm font-medium text-gray-700">
+            Page ${this.currentPage} of ${totalPages}
+          </span>
+          <button onclick="DebtsPage.nextPage()" 
+            class="px-3 py-1 text-sm font-medium rounded-md ${this.currentPage === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'}"
+            ${this.currentPage === totalPages ? 'disabled' : ''}>
+            Next
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  nextPage() {
+    const totalPages = Math.ceil(Store.debts.length / this.itemsPerPage);
+    if (this.currentPage < totalPages) {
+      this.currentPage++;
+      this.render();
+    }
+  },
+
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.render();
+    }
   },
 
   updateSummary() {
