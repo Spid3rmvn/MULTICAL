@@ -51,7 +51,7 @@ const SalesPage = {
           const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
           return {
             value: s.id.toString(),
-            label: `${s.color} (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
+            label: `${s.color} - ${s.size}m (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
             color: s.sticker_type === 'colored' ? s.color : null,
             stickerType: s.sticker_type,
             remaining: s.remaining,
@@ -333,7 +333,7 @@ const SalesPage = {
       const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
       return {
         value: s.id.toString(),
-        label: `${s.color} (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
+        label: `${s.color} - ${s.size}m (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
         color: s.sticker_type === 'colored' ? s.color : null,
         stickerType: s.sticker_type,
         remaining: s.remaining,

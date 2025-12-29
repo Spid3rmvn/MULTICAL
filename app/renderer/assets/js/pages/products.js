@@ -97,6 +97,16 @@ const ProductsPage = {
     this.selectedProductType = 'life_saver';
     this.selectedColor = 'white_red';
     this.selectedSize = '1x1';
+
+    // Explicitly reset hidden inputs
+    const typeInput = document.getElementById('product-type-input');
+    const colorInput = document.getElementById('product-color-input');
+    const sizeInput = document.getElementById('product-size-input');
+
+    if (typeInput) typeInput.value = 'life_saver';
+    if (colorInput) colorInput.value = 'white_red';
+    if (sizeInput) sizeInput.value = '1x1';
+
     this.updateTypeUI();
     this.updateColorUI();
     this.updateSizeUI();

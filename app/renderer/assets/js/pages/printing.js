@@ -67,7 +67,7 @@ const PrintingPage = {
       
       const allMaterials = printingMaterials.map(m => ({
         value: `pm_${m.id}`,
-        label: m.name,
+        label: `${m.name} - ${m.width}m width`,
         type: 'printing_material',
         id: m.id,
         width: m.width,
@@ -308,7 +308,6 @@ const PrintingPage = {
     const width = parseFloat(formData.get('width'));
     const rolls = parseInt(formData.get('rolls'));
     const metresPerRoll = parseFloat(formData.get('metres_per_roll')) || 50;
-    const color = formData.get('color') || null;
 
     if (!name || !width || !rolls) {
       Toast.error('Missing Information', 'Please fill in all required fields');
@@ -321,7 +320,7 @@ const PrintingPage = {
       width,
       rolls,
       metres_per_roll: metresPerRoll,
-      color
+      color: null // Color is now part of the name
     };
 
     await Store.addPrintingMaterial(material);
