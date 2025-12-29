@@ -1,375 +1,104 @@
 # MULTIPRINTS
 
-A modern offline desktop inventory and sales management application built with **Electron.js** and **SQLite**. MULTIPRINTS provides a complete business management solution for tracking products, stock (sticker rolls), sales, and customer debts with an intuitive dashboard interface.
+A modern offline desktop inventory and sales management application built with **Electron**. MULTIPRINTS provides a comprehensive solution for printing businesses to manage products, sticker stock, printing services, sales, and customer debts.
 
 ## Features
 
-- **Dashboard**: Real-time overview of revenue, sales, products, and outstanding debts with analytics charts
-- **Product Management**: Track Life Savers and Chevrons with customizable colors, sizes, and pricing
-- **Stock Management**: Manage sticker rolls inventory with color variants, sizes, and usage tracking
-- **Sales Tracking**: Record product and sticker sales with payment methods and customer information
-- **Services Management**: Add printing services (e.g., A4 printing, laminating) and track service earnings
-- **Debt Management**: Track customer debts with due dates, payment status, and overdue alerts
-- **Notifications**: Real-time alerts for overdue debts and important updates
-- **Analytics**: Visual revenue analytics with Chart.js integration
-- **Offline-First**: Full functionality without internet connection using local SQLite database
+### 📊 Dashboard
+- **Analytics**: Real-time overview of total revenue, sales count, material usage, and outstanding debts.
+- **Charts**: Interactive charts (Week/Month/Year) filtering real-time revenue vs. sales data.
+- **Activity Feed**: Live feed of recent sales and debt recordings.
 
-## Architecture
+### 📦 Product Management
+- **Inventory**: Track "Life Saver", "Chevron", and "Stripes" products.
+- **Variants**: Support for different colors (e.g., White & Red, Yellow & Red) and sizes (1x1, 1x2).
+- **Stock Tracking**: Monitor individual product stock levels.
 
-```
-┌─────────────────────────────────────────────────┐
-│           Electron Desktop Application          │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  Main Process          Renderer Process         │
-│  ├── Window Management ├── Dashboard            │
-│  ├── IPC Handlers      ├── Products Page        │
-│  ├── Database Manager  ├── Stock Page           │
-│  ├── Menu System       ├── Sales Page           │
-│  └── Preload API       └── Debts Page           │
-│                                                 │
-└─────────────────┬───────────────────────────────┘
-                  │
-                  │ IPC Communication
-                  │
-        ┌─────────▼──────────┐
-        │  better-sqlite3    │
-        │  (SQLite Database) │
-        └────────────────────┘
-             multical.db
-```
+### 🧵 Stock & Material Management
+- **Sticker Rolls**: Manage inventory of sticker rolls (Colored, Reflective, Clear) with length tracking.
+- **Printing Materials**: Track printing media (Banner Vinyl, Satin, One-Way Vision, etc.) by width, rolls, and remaining metres.
+- **Usage Tracking**: Automatically deduct metres used from stock when sales or printing jobs are recorded.
+
+### 🖨️ Printing Services
+- **Job Recording**: Record printing jobs with custom dimensions and material usage.
+- **Material Deductions**: Automatically calculates and updates remaining roll length.
+- **Cost Calculation**: Track service earnings separately from product sales.
+
+### 💰 Sales & Finance
+- **Point of Sale**: Unified interface for selling pre-made products, sticker metres, or recording printing jobs.
+- **Payment Methods**: Support for Cash, M-Pesa, and Till Number payments.
+- **Debt Management**: Convert unpaid sales/jobs to debts, track partial payments, and manage due dates.
+- **Receipts**: (Planned/Implied feature set foundation)
+
+### 🔒 Security & Architecture
+- **Offline First**: All data stored locally in a secure SQLite database.
+- **Role-Based Access**: separate views/permissions for Admin and Employee roles (e.g., hidden stats for employees).
+- **Secure IPC**: Communication between renderer and main process handled via secure context-bridged IPC.
+
+## Technology Stack
+
+- **Framework**: Electron (v39.x)
+- **Frontend**: API-free Vanilla JavaScript, HTML5, Custom CSS Components (Tailwind-inspired utility classes).
+- **Database**: SQLite (via `better-sqlite3`) with robust schema handling.
+- **Build Tool**: Electron Builder (for cross-platform installers).
 
 ## Installation
 
-### Download Pre-built Installers
+### Download
+Check the [Releases](https://github.com/codegoddy/MULTICAL/releases) page for the latest installer for valid platforms (Windows, Linux, macOS).
 
-Download the latest release for your operating system from the [Releases](https://github.com/codegoddy/MULTICAL/releases) page:
+### Build from Source
 
-| Platform | Installer | Notes |
-|----------|-----------|-------|
-| **Windows** | `.exe` (NSIS installer) | Full installer with shortcuts |
-| **Windows** | `portable.exe` | No installation needed |
-| **macOS** | `.dmg` | Intel and Apple Silicon |
-| **Linux** | `.AppImage` | Universal Linux binary |
-| **Linux** | `.deb` | Debian/Ubuntu |
-| **Linux** | `.rpm` | Fedora/RHEL |
+**Prerequisites**: Node.js v18+ and npm.
 
-### Build From Source
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/codegoddy/MULTICAL.git
+    cd MULTICAL/app
+    ```
 
-#### Prerequisites
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
 
-- **Node.js** >= 18.x
-- **npm** or **yarn**
+3.  **Run in Development Mode**:
+    ```bash
+    npm run dev
+    ```
 
-#### Build Steps
-
-```bash
-# Clone the repository
-git clone https://github.com/codegoddy/MULTICAL.git
-cd MULTICAL/app
-
-# Install dependencies
-npm install
-
-# Build for your platform
-npm run build          # Current platform
-npm run build:win      # Windows
-npm run build:mac      # macOS  
-npm run build:linux    # Linux
-npm run build:all      # All platforms (requires appropriate OS or CI)
-```
-
-Built installers will be in the `app/dist/` directory.
-
-### Creating a Release
-
-To create a new release with automated builds:
-
-```bash
-# Update version in package.json (automatically creates git tag)
-cd app
-npm version patch  # or minor, major
-
-# Push the tag to trigger the GitHub Actions release workflow
-git push origin --tags
-```
-
-The GitHub Actions workflow will automatically build installers for all platforms and create a release.
+4.  **Build Production Installer**:
+    ```bash
+    npm run build:linux  # or build:win, build:mac
+    ```
 
 ## Project Structure
 
 ```
 MULTIPRINTS/
 └── app/
-    ├── main/                    # Electron main process
-    │   ├── handlers/
-    │   │   └── index.js         # IPC message handlers
-    │   ├── index.js             # Main entry point
-    │   ├── menu.js              # Application menu
-    │   └── preload.js           # Context bridge API
-    │
-    ├── renderer/                # Electron renderer process
+    ├── main/                 # Main Process (Electron)
+    │   ├── handlers/         # IPC Handlers (DB access)
+    │   └── preload.js        # Context Bridge
+    ├── renderer/             # Renderer Process (UI)
     │   ├── assets/
-    │   │   ├── css/
-    │   │   │   ├── components.css
-    │   │   │   └── main.css
-    │   │   └── js/
-    │   │       ├── api/
-    │   │       │   └── client.js
-    │   │       ├── components/
-    │   │       │   ├── confirm-modal.js
-    │   │       │   ├── dropdown.js
-    │   │       │   ├── notifications.js
-    │   │       │   └── toast.js
-    │   │       ├── pages/
-    │   │       │   ├── dashboard.js
-    │   │       │   └── debts.js
-    │   │       └── app.js       # Main app controller
-    │   ├── pages/
-    │   │   ├── dashboard.html
-    │   │   ├── debts.html
-    │   │   ├── sales.html
-    │   │   └── stock.html
-    │   └── index.html           # Main window
-    │
-    ├── shared/
-    │   └── constants.js         # Shared constants
-    │
-    ├── database.js              # SQLite database manager
-    ├── electron.config.js       # Electron configuration
-    └── package.json
+    │   │   ├── js/
+    │   │   │   ├── pages/    # Page-specific logic (dashboard.js, sales.js, etc.)
+    │   │   │   ├── store.js  # Centralized Data Store
+    │   │   │   └── app.js    # Router & App Controller
+    │   └── pages/            # HTML Views
+    └── database.js           # SQLite Schema & Migration Logic
 ```
 
-## Quick Start
+## Database Schema Highlights
 
-### 1. Installation
-
-```bash
-cd app
-npm install
-```
-
-### 2. Development
-
-```bash
-# Start in development mode with DevTools
-npm run dev
-
-# Start normally
-npm start
-```
-
-### 3. Database
-
-The SQLite database is automatically created at first launch in the user data directory:
-- **Linux**: `~/.config/multiprints/multiprints.db`
-- **macOS**: `~/Library/Application Support/multiprints/multiprints.db`
-- **Windows**: `%APPDATA%/multiprints/multiprints.db`
-
-## Database Schema
-
-### Products Table
-Stores Life Savers and Chevrons inventory.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| name | TEXT | Product name |
-| product_type | TEXT | life_saver or chevron |
-| color | TEXT | Product color |
-| size | TEXT | Product size |
-| selling_price | REAL | Price per unit |
-| stock | INTEGER | Current stock quantity |
-| min_sale_qty | INTEGER | Minimum sale quantity |
-| sale_unit | TEXT | Unit of sale |
-
-### Stock Table
-Manages sticker rolls inventory.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| color | TEXT | Sticker color |
-| size | TEXT | Sticker size (default: '1') |
-| sticker_type | TEXT | colored or monochrome |
-| rolls | INTEGER | Number of rolls |
-| metres_per_roll | REAL | Metres per roll (default: 50) |
-| total_metres | REAL | Total metres available |
-| metres_used | REAL | Metres consumed |
-
-### Sales Table
-Records all sales transactions.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| type | TEXT | product or sticker |
-| product_id | INTEGER | FK to products |
-| stock_id | INTEGER | FK to stock |
-| product_name | TEXT | Product name snapshot |
-| quantity | TEXT | Quantity sold |
-| amount | REAL | Sale amount |
-| payment_method | TEXT | cash, mpesa, card |
-| customer_name | TEXT | Customer name |
-| timestamp | DATETIME | Sale timestamp |
-
-### Debts Table
-Tracks customer debts.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| customer_name | TEXT | Customer name |
-| phone | TEXT | Contact number |
-| amount | REAL | Debt amount |
-| due_date | TEXT | Payment due date |
-| description | TEXT | Debt notes |
-| status | TEXT | pending or paid |
-| paid_at | DATETIME | Payment timestamp |
-| created_at | DATETIME | Record creation time |
-
-### Services Table
-Manages available printing services.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| name | TEXT | Service name |
-| description | TEXT | Service description |
-| price | REAL | Price per unit |
-| unit | TEXT | Unit of measurement |
-| is_active | INTEGER | Active status (1/0) |
-| created_at | DATETIME | Record creation time |
-| updated_at | DATETIME | Last update time |
-
-### Service Transactions Table
-Records all service transactions.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INTEGER | Primary key |
-| service_id | INTEGER | FK to services |
-| service_name | TEXT | Service name snapshot |
-| quantity | REAL | Quantity of service |
-| price | REAL | Price per unit |
-| amount | REAL | Total amount |
-| payment_method | TEXT | cash, mpesa, card |
-| customer_name | TEXT | Customer name |
-| notes | TEXT | Transaction notes |
-| timestamp | DATETIME | Transaction timestamp |
-
-## IPC API
-
-The application uses Electron's IPC for secure communication between main and renderer processes.
-
-### Database Operations
-
-```javascript
-// Products
-await window.db.products.getAll()
-await window.db.products.get(id)
-await window.db.products.add(product)
-await window.db.products.update(id, updates)
-await window.db.products.delete(id)
-
-// Stock
-await window.db.stock.getAll()
-await window.db.stock.getByColorSizeType(color, size, type)
-await window.db.stock.add(stockItem)
-await window.db.stock.update(id, updates)
-
-// Sales
-await window.db.sales.getAll()
-await window.db.sales.getToday()
-await window.db.sales.add(sale)
-await window.db.sales.getTodayTotal()
-
-// Debts
-await window.db.debts.getAll()
-await window.db.debts.getPending()
-await window.db.debts.add(debt)
-await window.db.debts.markPaid(id)
-await window.db.debts.getTotalOutstanding()
-await window.db.debts.getOverdue()
-
-// Services
-await window.db.services.getAll()
-await window.db.services.getActive()
-await window.db.services.get(id)
-await window.db.services.add(service)
-await window.db.services.update(id, updates)
-await window.db.services.delete(id)
-
-// Service Transactions
-await window.db.serviceTransactions.getAll()
-await window.db.serviceTransactions.getToday()
-await window.db.serviceTransactions.add(transaction)
-await window.db.serviceTransactions.getTodayTotal()
-await window.db.serviceTransactions.getTotal()
-```
-
-### Utility APIs
-
-```javascript
-// App info
-await window.electronAPI.getAppVersion()
-const platform = window.electronAPI.getPlatform()
-
-// File dialogs
-await window.electronAPI.selectFile(options)
-await window.electronAPI.selectDirectory(options)
-```
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Desktop Framework | Electron.js v39.2.6 |
-| Frontend | HTML5, CSS3 (Tailwind), Vanilla JavaScript |
-| Database | SQLite (better-sqlite3 v12.5.0) |
-| Charts | Chart.js |
-| UI Components | Custom components with Tailwind CSS |
-| Process Communication | IPC (Inter-Process Communication) |
-| Security | Context Isolation, Preload Scripts |
-
-## Development
-
-### Adding New Pages
-
-1. Create HTML in `renderer/pages/your-page.html`
-2. Create controller in `renderer/assets/js/pages/your-page.js`
-3. Add navigation link in `renderer/index.html`
-4. Register controller in `renderer/assets/js/app.js`
-
-### Adding New IPC Handlers
-
-1. Define handler in `main/handlers/index.js`
-2. Expose API in `main/preload.js`
-3. Call from renderer using `window.electronAPI` or `window.db`
-
-### Database Migrations
-
-For migrating data from localStorage:
-
-```javascript
-const data = {
-  products: [...],
-  stock: [...],
-  sales: [...],
-  debts: [...]
-};
-
-await window.db.migrate(data);
-```
-
-## Security Features
-
-- **Context Isolation**: Enabled for security
-- **Node Integration**: Disabled in renderer
-- **Preload Scripts**: Secure API exposure via contextBridge
-- **CSP**: Content Security Policy configured
-- **Foreign Keys**: Enabled in SQLite for referential integrity
+- **`products`**: pre-made items.
+- **`stock`**: sticker rolls data.
+- **`printing_materials`**: banner/vinyl rolls data.
+- **`sales`**: record of product/stock sales.
+- **`service_transactions`**: record of printing jobs.
+- **`debts`**: customer outstanding balances.
 
 ## License
 
-MIT License
+MIT License - Copyright © 2024 MULTIPRINTS Team
