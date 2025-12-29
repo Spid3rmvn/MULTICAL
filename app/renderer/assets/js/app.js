@@ -21,25 +21,101 @@ const pageControllers = {
  * Initialize the application
  */
 async function init() {
+  // Check if user is authenticated
+  const sessionToken = localStorage.getItem('sessionToken');
+  if (!sessionToken) {
+    // Redirect to login
+    window.location.href = './pages/login.html';
+    return;
+  }
+
+  try {
+    // Validate session
+    const isValid = await window.api.validateSession();
+    if (!isValid) {
+      // Invalid session, redirect to login
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('currentUser');
+      window.location.href = './pages/login.html';
+      return;
+    }
+  } catch (error) {
+    console.error('Session validation error:', error);
+    window.location.href = './pages/login.html';
+    return;
+  }
+  
   // Wait for Store to initialize (loads data from database)
   await Store.init();
   
   setupNavigation();
-  loadPage('dashboard');
+  
+  // Hide notification icon for employees
+  const role = getCurrentUserRole();
+  if (role === 'employee') {
+    const notificationContainer = document.getElementById('notification-container');
+    if (notificationContainer) {
+      notificationContainer.style.display = 'none';
+    }
+  }
+  
+  // Load appropriate page based on user role
+  const startPage = role === 'employee' ? 'sales' : 'dashboard';
+  loadPage(startPage);
+  
   console.log('MULTIPRINTS initialized');
+}
+
+/**
+ * Get current user role
+ */
+function getCurrentUserRole() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    return currentUser.role || 'user';
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    return 'user';
+  }
+}
+
+/**
+ * Check if user has access to page
+ */
+function canAccessPage(pageName) {
+  const role = getCurrentUserRole();
+  
+  // Employee can only access printing, sales and settings
+  if (role === 'employee') {
+    return pageName === 'printing' || pageName === 'sales' || pageName === 'settings';
+  }
+  
+  // Admin and other authenticated users can access everything
+  return true;
 }
 
 /**
  * Setup sidebar navigation
  */
 function setupNavigation() {
-  // Handle sidebar navigation
+  const role = getCurrentUserRole();
+  
+  // Hide nav items based on role
   const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
   
   navItems.forEach(item => {
+    const pageName = item.dataset.page;
+    
+    // Hide nav items that employee can't access
+    if (role === 'employee' && pageName && !canAccessPage(pageName)) {
+      item.closest('li').style.display = 'none';
+    } else if (role === 'employee' && pageName === 'settings') {
+      // Ensure settings is visible for employees
+      item.closest('li').style.display = 'block';
+    }
+    
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      const pageName = item.dataset.page;
       if (pageName) {
         navigateToPage(pageName);
       }
@@ -58,12 +134,49 @@ function setupNavigation() {
       }
     });
   });
+
+  // Handle logout button
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleLogout();
+    });
+  }
+}
+
+/**
+ * Handle logout
+ */
+async function handleLogout() {
+  try {
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (sessionToken) {
+      await window.api.logout(sessionToken);
+    }
+
+    // Clear session storage
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('currentUser');
+
+    // Redirect to login
+    window.location.href = './pages/login.html';
+  } catch (error) {
+    console.error('Logout error:', error);
+    Toast.error('Logout Failed', 'Could not logout properly');
+  }
 }
 
 /**
  * Navigate to a specific page
  */
 function navigateToPage(pageName) {
+  // Check if user has access to this page
+  if (!canAccessPage(pageName)) {
+    Toast.error('Access Denied', 'You do not have permission to access this page');
+    return;
+  }
+  
   // Update active sidebar nav item
   const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
   navItems.forEach(item => {

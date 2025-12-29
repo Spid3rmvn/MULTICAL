@@ -1,6 +1,6 @@
 {
   "name": "multiprints",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "MULTIPRINTS - Offline Desktop Inventory and Sales Management Application",
   "main": "main/index.js",
   "author": {
@@ -37,9 +37,6 @@
     "electron": "^39.2.7",
     "electron-builder": "^25.1.8",
     "electron-rebuild": "^3.2.9"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.5.0"
   },
   "build": {
     "appId": "com.multiprints.app",
@@ -161,5 +158,8 @@
       "provider": "github",
       "releaseType": "release"
     }
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.5.0"
   }
 }

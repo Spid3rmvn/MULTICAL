@@ -1,6 +1,7 @@
 const { ipcMain, app, dialog, BrowserWindow } = require('electron');
 const config = require('../../electron.config');
 const database = require('../../database');
+const auth = require('../auth');
 
 /**
  * IPC Handlers - Handle messages from renderer process
@@ -9,6 +10,56 @@ const database = require('../../database');
 // App information
 ipcMain.handle('app:version', () => {
   return app.getVersion();
+});
+
+// ==================== Authentication ====================
+
+ipcMain.handle('auth:login', (event, username, password) => {
+  return auth.authenticate(username, password);
+});
+
+ipcMain.handle('auth:logout', (event, token) => {
+  auth.logout(token);
+  return { success: true };
+});
+
+ipcMain.handle('auth:validateToken', (event, token) => {
+  return auth.validateToken(token);
+});
+
+ipcMain.handle('auth:getSession', (event, token) => {
+  const session = auth.getSession(token);
+  if (session) {
+    return {
+      success: true,
+      session: {
+        username: session.username,
+        role: session.role,
+        permissions: session.permissions
+      }
+    };
+  }
+  return { success: false };
+});
+
+ipcMain.handle('auth:addUser', (event, username, password, role) => {
+  return auth.addUser(username, password, role);
+});
+
+ipcMain.handle('auth:updatePassword', (event, username, oldPassword, newPassword) => {
+  return auth.updatePassword(username, oldPassword, newPassword);
+});
+
+ipcMain.handle('auth:updateUsername', (event, oldUsername, newUsername) => {
+  return auth.updateUsername(oldUsername, newUsername);
+});
+
+ipcMain.handle('auth:getAllUsers', () => {
+  return auth.getAllUsers();
+});
+
+ipcMain.handle('auth:deleteUser', (event, username) => {
+  return auth.deleteUser(username);
 });
 
 // ==================== Products ====================
@@ -81,6 +132,11 @@ ipcMain.handle('db:sales:getTodayTotal', () => {
   return database.getTodayTotalSales();
 });
 
+ipcMain.handle('db:sales:update', (event, id, updates) => {
+  database.updateSale(id, updates);
+  return { success: true };
+});
+
 ipcMain.handle('db:sales:delete', (event, id) => {
   database.deleteSale(id);
   return { success: true };
@@ -108,6 +164,19 @@ ipcMain.handle('db:debts:markPaid', (event, id) => {
 ipcMain.handle('db:debts:delete', (event, id) => {
   database.deleteDebt(id);
   return { success: true };
+});
+
+ipcMain.handle('db:debts:update', (event, id, updates) => {
+  database.updateDebt(id, updates);
+  return { success: true };
+});
+
+ipcMain.handle('db:debts:getBySaleId', (event, saleId) => {
+  return database.getDebtBySaleId(saleId);
+});
+
+ipcMain.handle('db:debts:getByTransactionId', (event, transactionId) => {
+  return database.getDebtByTransactionId(transactionId);
 });
 
 ipcMain.handle('db:debts:getTotalOutstanding', () => {
@@ -185,6 +254,11 @@ ipcMain.handle('db:serviceTransactions:getTodayTotal', () => {
 
 ipcMain.handle('db:serviceTransactions:getTotal', () => {
   return database.getTotalServiceEarnings();
+});
+
+ipcMain.handle('db:serviceTransactions:update', (event, id, updates) => {
+  database.updateServiceTransaction(id, updates);
+  return { success: true };
 });
 
 ipcMain.handle('db:serviceTransactions:delete', (event, id) => {

@@ -348,6 +348,21 @@ const Store = {
     }
   },
 
+  async updateSale(id, updates) {
+    try {
+      await window.db.sales.update(id, updates);
+      const index = this.sales.findIndex(s => s.id === id);
+      if (index !== -1) {
+        this.sales[index] = { ...this.sales[index], ...updates };
+      }
+      this.notify('sales');
+      return this.sales[index];
+    } catch (error) {
+      console.error('Failed to update sale:', error);
+      return null;
+    }
+  },
+
   // ==================== Debts CRUD ====================
   
   async addDebt(debt) {
@@ -364,7 +379,7 @@ const Store = {
 
   async updateDebt(id, updates) {
     try {
-      // For simple updates, we still use the markPaid endpoint for paid status
+      await window.db.debts.update(id, updates);
       const index = this.debts.findIndex(d => d.id === id);
       if (index !== -1) {
         this.debts[index] = { ...this.debts[index], ...updates };
@@ -390,15 +405,18 @@ const Store = {
   async markDebtPaid(id) {
     try {
       await window.db.debts.markPaid(id);
-      const index = this.debts.findIndex(d => d.id === id);
-      if (index !== -1) {
-        this.debts[index] = { ...this.debts[index], status: 'paid', paid_at: new Date().toISOString() };
+      
+      const debt = this.debts.find(d => d.id === id);
+      if (debt) {
+        if (debt.sale_id) await this.loadSales();
+        if (debt.service_transaction_id) await this.loadServiceTransactions();
       }
-      this.notify('debts');
-      return this.debts[index];
+
+      await this.loadDebts(); // Refresh all debts to be sure
+      return true;
     } catch (error) {
       console.error('Failed to mark debt as paid:', error);
-      return null;
+      return false;
     }
   },
 
@@ -437,6 +455,24 @@ const Store = {
     }
   },
 
+  async loadSales() {
+    try {
+      this.sales = await window.db.sales.getAll();
+      this.notify('sales');
+    } catch (error) {
+      console.error('Failed to load sales:', error);
+    }
+  },
+
+  async loadServiceTransactions() {
+    try {
+      this.serviceTransactions = await window.db.serviceTransactions.getAll();
+      this.notify('serviceTransactions');
+    } catch (error) {
+      console.error('Failed to load service transactions:', error);
+    }
+  },
+
   async addDebtPayment(payment) {
     try {
       const result = await window.db.debtPayments.add(payment);
@@ -465,6 +501,24 @@ const Store = {
       await this.loadDebts();
     } catch (error) {
       console.error('Failed to delete debt payment:', error);
+    }
+  },
+
+  async getDebtBySaleId(saleId) {
+    try {
+      return await window.db.debts.getBySaleId(saleId);
+    } catch (error) {
+      console.error('Failed to get debt by sale id:', error);
+      return null;
+    }
+  },
+
+  async getDebtByTransactionId(transactionId) {
+    try {
+      return await window.db.debts.getByTransactionId(transactionId);
+    } catch (error) {
+      console.error('Failed to get debt by transaction id:', error);
+      return null;
     }
   },
 
@@ -744,6 +798,21 @@ const Store = {
       this.notify('serviceTransactions');
     } catch (error) {
       console.error('Failed to delete service transaction:', error);
+    }
+  },
+
+  async updateServiceTransaction(id, updates) {
+    try {
+      await window.db.serviceTransactions.update(id, updates);
+      const index = this.serviceTransactions.findIndex(t => t.id === id);
+      if (index !== -1) {
+        this.serviceTransactions[index] = { ...this.serviceTransactions[index], ...updates };
+      }
+      this.notify('serviceTransactions');
+      return this.serviceTransactions[index];
+    } catch (error) {
+      console.error('Failed to update service transaction:', error);
+      return null;
     }
   },
 

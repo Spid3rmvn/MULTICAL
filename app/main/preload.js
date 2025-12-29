@@ -21,6 +21,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectDirectory: (options) => ipcRenderer.invoke('dialog:openDirectory', options),
 });
 
+// Authentication API exposed to renderer
+contextBridge.exposeInMainWorld('api', {
+  // Authentication
+  login: (username, password) => ipcRenderer.invoke('auth:login', username, password),
+  logout: (token) => ipcRenderer.invoke('auth:logout', token),
+  validateSession: () => ipcRenderer.invoke('auth:validateToken', localStorage.getItem('sessionToken')),
+  getSession: (token) => ipcRenderer.invoke('auth:getSession', token),
+  
+  // User management (admin only)
+  addUser: (username, password, role) => ipcRenderer.invoke('auth:addUser', username, password, role),
+  updatePassword: (username, oldPassword, newPassword) => ipcRenderer.invoke('auth:updatePassword', username, oldPassword, newPassword),
+  updateUsername: (oldUsername, newUsername) => ipcRenderer.invoke('auth:updateUsername', oldUsername, newUsername),
+  getAllUsers: () => ipcRenderer.invoke('auth:getAllUsers'),
+  deleteUser: (username) => ipcRenderer.invoke('auth:deleteUser', username)
+});
+
 // App API exposed to renderer (for settings page)
 contextBridge.exposeInMainWorld('app', {
   getVersion: () => ipcRenderer.invoke('app:version'),
@@ -58,6 +74,7 @@ contextBridge.exposeInMainWorld('db', {
     getAll: () => ipcRenderer.invoke('db:sales:getAll'),
     getToday: () => ipcRenderer.invoke('db:sales:getToday'),
     add: (sale) => ipcRenderer.invoke('db:sales:add', sale),
+    update: (id, updates) => ipcRenderer.invoke('db:sales:update', id, updates),
     getTodayTotal: () => ipcRenderer.invoke('db:sales:getTodayTotal'),
     delete: (id) => ipcRenderer.invoke('db:sales:delete', id)
   },
@@ -67,6 +84,9 @@ contextBridge.exposeInMainWorld('db', {
     getAll: () => ipcRenderer.invoke('db:debts:getAll'),
     getPending: () => ipcRenderer.invoke('db:debts:getPending'),
     add: (debt) => ipcRenderer.invoke('db:debts:add', debt),
+    update: (id, updates) => ipcRenderer.invoke('db:debts:update', id, updates),
+    getBySaleId: (id) => ipcRenderer.invoke('db:debts:getBySaleId', id),
+    getByTransactionId: (id) => ipcRenderer.invoke('db:debts:getByTransactionId', id),
     markPaid: (id) => ipcRenderer.invoke('db:debts:markPaid', id),
     delete: (id) => ipcRenderer.invoke('db:debts:delete', id),
     getTotalOutstanding: () => ipcRenderer.invoke('db:debts:getTotalOutstanding'),
@@ -94,6 +114,7 @@ contextBridge.exposeInMainWorld('db', {
     getAll: () => ipcRenderer.invoke('db:serviceTransactions:getAll'),
     getToday: () => ipcRenderer.invoke('db:serviceTransactions:getToday'),
     add: (transaction) => ipcRenderer.invoke('db:serviceTransactions:add', transaction),
+    update: (id, updates) => ipcRenderer.invoke('db:serviceTransactions:update', id, updates),
     getTodayTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTodayTotal'),
     getTotal: () => ipcRenderer.invoke('db:serviceTransactions:getTotal'),
     delete: (id) => ipcRenderer.invoke('db:serviceTransactions:delete', id)

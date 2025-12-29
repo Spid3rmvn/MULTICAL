@@ -22,6 +22,12 @@ const SalesPage = {
     this.bindEvents();
     this.render();
     this.updateStats();
+
+    // Hide stats if employee
+    if (window.Permissions && window.Permissions.getCurrentRole() === 'employee') {
+      const statsContainer = document.getElementById('sales-stats-container');
+      if (statsContainer) statsContainer.style.display = 'none';
+    }
     
     // Subscribe to store changes
     Store.subscribe('sales', () => {
@@ -683,7 +689,11 @@ const SalesPage = {
         <td class="px-5 py-4 text-sm text-gray-600">${sale.quantity}</td>
         <td class="px-5 py-4 text-sm font-medium text-gray-900">KSh ${sale.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
         <td class="px-5 py-4">
-          <span class="status-badge status-badge--success capitalize">${sale.payment_method}</span>
+          <div class="flex flex-col gap-1">
+            <span class="status-badge status-badge--success capitalize">${sale.payment_method}</span>
+            ${sale.is_debt === 1 ? '<span class="text-[10px] font-bold text-red-600 uppercase tracking-wider">Converted to Debt</span>' : ''}
+            ${sale.is_debt === 2 ? '<span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Debt Paid</span>' : ''}
+          </div>
         </td>
         <td class="px-5 py-4 text-sm text-gray-600">${sale.customer_name}</td>
         <td class="px-5 py-4">
@@ -695,13 +705,14 @@ const SalesPage = {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
               </svg>
             </button>
+            ${Permissions.canDelete() ? `
             <button onclick="SalesPage.deleteSale(${sale.id})" 
               class="text-gray-400 hover:text-red-600 transition-colors" 
               title="Delete sale">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
-            </button>
+            </button>` : ''}
           </div>
         </td>
       </tr>
@@ -827,16 +838,21 @@ const SalesPage = {
     });
   },
 
-  convertToDebt(saleId) {
+  async convertToDebt(saleId) {
     const sale = Store.sales.find(s => s.id === saleId);
     if (!sale) return;
+
+    let existingDebt = null;
+    if (sale.is_debt) {
+      existingDebt = await Store.getDebtBySaleId(saleId);
+    }
 
     // Create and show modal for converting to debt
     const modalHTML = `
       <div id="modal-convert-debt" class="modal-overlay open">
         <div class="modal-container" style="max-width: 500px;">
           <div class="modal-header">
-            <h3 class="modal-title">Convert Sale to Debt</h3>
+            <h3 class="modal-title">${existingDebt ? 'Edit Debt Information' : 'Convert Sale to Debt'}</h3>
             <button class="modal-close-btn" onclick="SalesPage.closeConvertDebtModal()">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -853,16 +869,18 @@ const SalesPage = {
             <form id="convert-debt-form" class="space-y-4">
               <input type="hidden" id="convert-sale-id" value="${saleId}">
               <input type="hidden" id="convert-sale-amount" value="${sale.amount}">
+              <input type="hidden" id="convert-debt-id" value="${existingDebt ? existingDebt.id : ''}">
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-                <input type="text" id="convert-customer-name" value="${sale.customer_name}" 
+                <input type="text" id="convert-customer-name" value="${existingDebt ? existingDebt.customer_name : sale.customer_name}" 
                   class="w-full" placeholder="Enter customer name" required>
               </div>
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Customer Phone</label>
-                <input type="tel" id="convert-customer-phone" class="w-full" placeholder="Optional">
+                <input type="tel" id="convert-customer-phone" value="${existingDebt ? (existingDebt.phone || '') : ''}" 
+                  class="w-full" placeholder="Optional">
               </div>
               
               <div>
@@ -875,7 +893,7 @@ const SalesPage = {
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid *</label>
                 <input type="number" id="convert-amount-paid" min="0" max="${sale.amount}" 
-                  step="0.01" value="0" class="w-full" placeholder="0.00" required>
+                  step="0.01" value="${existingDebt ? existingDebt.paid_amount : 0}" class="w-full" placeholder="0.00" required>
                 <p class="text-xs text-gray-500 mt-1">How much the customer has already paid</p>
               </div>
               
@@ -883,7 +901,7 @@ const SalesPage = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Remaining Debt</label>
                 <div class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-lg font-bold text-red-600" 
                   id="convert-remaining-debt">
-                  KSh ${sale.amount.toLocaleString()}
+                  KSh ${(existingDebt ? existingDebt.remaining_amount : sale.amount).toLocaleString()}
                 </div>
               </div>
               
@@ -891,8 +909,9 @@ const SalesPage = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <div class="relative">
                   <input type="text" id="convert-due-date-display" readonly class="w-full cursor-pointer"
+                    value="${existingDebt ? (existingDebt.due_date || '') : ''}"
                     placeholder="Select due date">
-                  <input type="hidden" id="convert-due-date" value="">
+                  <input type="hidden" id="convert-due-date" value="${existingDebt ? (existingDebt.due_date || '') : ''}">
                   <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -908,7 +927,7 @@ const SalesPage = {
             <button type="button" class="btn-secondary px-4 py-2 rounded-lg" 
               onclick="SalesPage.closeConvertDebtModal()">Cancel</button>
             <button type="button" class="btn-primary px-4 py-2 rounded-lg" 
-              onclick="SalesPage.submitConvertDebt()">Create Debt</button>
+              onclick="SalesPage.submitConvertDebt()">${existingDebt ? 'Update Debt' : 'Create Debt'}</button>
           </div>
         </div>
       </div>
@@ -966,6 +985,7 @@ const SalesPage = {
 
   async submitConvertDebt() {
     const saleId = parseInt(document.getElementById('convert-sale-id').value);
+    const debtId = document.getElementById('convert-debt-id').value;
     const totalAmount = parseFloat(document.getElementById('convert-sale-amount').value);
     const customerName = document.getElementById('convert-customer-name').value.trim();
     const customerPhone = document.getElementById('convert-customer-phone').value.trim();
@@ -987,20 +1007,28 @@ const SalesPage = {
     const sale = Store.sales.find(s => s.id === saleId);
     if (!sale) return;
 
-    // Create debt with paid_amount set to the amount already paid
-    const debt = {
+    // Create or update debt
+    const debtData = {
       customer_name: customerName,
       phone: customerPhone || null,
       amount: totalAmount,
       paid_amount: amountPaid,
       remaining_amount: remainingDebt,
       due_date: dueDate,
-      description: `Sale: ${sale.product_name} (${sale.quantity}) - Total: KSh ${totalAmount.toLocaleString()}, Paid: KSh ${amountPaid.toLocaleString()}, Remaining: KSh ${remainingDebt.toLocaleString()}`
+      description: `Sale: ${sale.product_name} (${sale.quantity})`,
+      sale_id: saleId
     };
 
-    await Store.addDebt(debt);
+    if (debtId) {
+      await Store.updateDebt(parseInt(debtId), debtData);
+      Toast.success('Debt Updated', `Debt for ${customerName} updated successfully`);
+    } else {
+      await Store.addDebt(debtData);
+      Toast.success('Debt Created', `Debt of KSh ${remainingDebt.toLocaleString()} created for ${customerName}`);
+    }
     
-    Toast.success('Debt Created', `Debt of KSh ${remainingDebt.toLocaleString()} created for ${customerName}`);
+    // Mark the sale as a debt (ensures the badge shows)
+    await Store.updateSale(saleId, { is_debt: 1 });
     
     this.closeConvertDebtModal();
   },

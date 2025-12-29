@@ -32,8 +32,8 @@ function createWindow() {
     }
   });
 
-  // Load the renderer
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  // Load the login page first (will redirect to index.html after authentication)
+  mainWindow.loadFile(path.join(__dirname, '../renderer/pages/login.html'));
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
@@ -61,6 +61,9 @@ app.whenReady().then(() => {
   // Initialize database
   database.init();
   
+  // Register IPC handlers
+  require('./handlers');
+  
   createWindow();
 
   app.on('activate', () => {
@@ -82,9 +85,6 @@ app.on('before-quit', () => {
   // Close database connection before quitting
   database.close();
 });
-
-// IPC Handlers
-require('./handlers');
 
 // Export for testing
 module.exports = { createWindow, mainWindow, database };

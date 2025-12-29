@@ -17,6 +17,12 @@ const PrintingPage = {
     this.bindEvents();
     this.render();
     this.updateStats();
+
+    // Hide stats if employee
+    if (window.Permissions && window.Permissions.getCurrentRole() === 'employee') {
+      const statsContainer = document.getElementById('printing-stats-container');
+      if (statsContainer) statsContainer.style.display = 'none';
+    }
     
     // Subscribe to store changes
     Store.subscribe('serviceTransactions', () => {
@@ -359,12 +365,13 @@ const PrintingPage = {
           </div>
           <div class="flex gap-2 ml-4">
             <button onclick="PrintingPage.addMoreRolls(${material.id})" class="px-3 py-1 text-xs font-medium bg-black text-white rounded-md hover:bg-gray-800 transition-colors">Add Rolls</button>
+            ${Permissions.canDelete() ? `
             <button onclick="PrintingPage.deleteMaterial(${material.id})" 
               class="text-gray-400 hover:text-red-600 transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
               </svg>
-            </button>
+            </button>` : ''}
           </div>
         </div>
       `;
@@ -543,7 +550,13 @@ const PrintingPage = {
           <td class="px-5 py-4 text-sm text-gray-600">${t.stock_metres_used.toFixed(1)}m</td>
           <td class="px-5 py-4 text-sm text-gray-600">${material}</td>
           <td class="px-5 py-4 text-sm font-medium text-gray-900">KSh ${t.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-          <td class="px-5 py-4 text-sm text-gray-600">${paymentLabel}</td>
+          <td class="px-5 py-4">
+            <div class="flex flex-col gap-1">
+              <span class="status-badge status-badge--success capitalize">${t.payment_method === 'mpesa' ? 'M-Pesa' : t.payment_method === 'till' ? 'Till Number' : 'Cash'}</span>
+              ${t.is_debt === 1 ? '<span class="text-[10px] font-bold text-red-600 uppercase tracking-wider">Converted to Debt</span>' : ''}
+              ${t.is_debt === 2 ? '<span class="text-[10px] font-bold text-green-600 uppercase tracking-wider">Debt Paid</span>' : ''}
+            </div>
+          </td>
           <td class="px-5 py-4 text-sm text-gray-600">${t.customer_name}</td>
           <td class="px-5 py-4">
             <div class="flex items-center gap-2">
@@ -554,13 +567,14 @@ const PrintingPage = {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
               </button>
+              ${Permissions.canDelete() ? `
               <button onclick="PrintingPage.deletePrintingJob(${t.id})" 
                 class="text-gray-400 hover:text-red-600 transition-colors" 
                 title="Delete job">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
-              </button>
+              </button>` : ''}
             </div>
           </td>
         </tr>
@@ -676,16 +690,21 @@ const PrintingPage = {
     if (totalEl) totalEl.textContent = `KSh ${totalEarnings.toLocaleString()}`;
   },
 
-  convertToDebt(transactionId) {
+  async convertToDebt(transactionId) {
     const transaction = Store.serviceTransactions.find(t => t.id === transactionId);
     if (!transaction) return;
+
+    let existingDebt = null;
+    if (transaction.is_debt) {
+      existingDebt = await Store.getDebtByTransactionId(transactionId);
+    }
 
     // Create and show modal for converting to debt
     const modalHTML = `
       <div id="modal-convert-printing-debt" class="modal-overlay open">
         <div class="modal-container" style="max-width: 500px;">
           <div class="modal-header">
-            <h3 class="modal-title">Convert Printing Job to Debt</h3>
+            <h3 class="modal-title">${existingDebt ? 'Edit Debt Information' : 'Convert Printing Job to Debt'}</h3>
             <button class="modal-close-btn" onclick="PrintingPage.closeConvertDebtModal()">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -702,16 +721,18 @@ const PrintingPage = {
             <form id="convert-printing-debt-form" class="space-y-4">
               <input type="hidden" id="convert-printing-id" value="${transactionId}">
               <input type="hidden" id="convert-printing-amount" value="${transaction.amount}">
+              <input type="hidden" id="convert-printing-debt-id" value="${existingDebt ? existingDebt.id : ''}">
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-                <input type="text" id="convert-printing-customer-name" value="${transaction.customer_name}" 
+                <input type="text" id="convert-printing-customer-name" value="${existingDebt ? existingDebt.customer_name : transaction.customer_name}" 
                   class="w-full" placeholder="Enter customer name" required>
               </div>
               
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Customer Phone</label>
-                <input type="tel" id="convert-printing-customer-phone" class="w-full" placeholder="Optional">
+                <input type="tel" id="convert-printing-customer-phone" value="${existingDebt ? (existingDebt.phone || '') : ''}"
+                  class="w-full" placeholder="Optional">
               </div>
               
               <div>
@@ -724,7 +745,7 @@ const PrintingPage = {
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid *</label>
                 <input type="number" id="convert-printing-amount-paid" min="0" max="${transaction.amount}" 
-                  step="0.01" value="0" class="w-full" placeholder="0.00" required>
+                  step="0.01" value="${existingDebt ? existingDebt.paid_amount : 0}" class="w-full" placeholder="0.00" required>
                 <p class="text-xs text-gray-500 mt-1">How much the customer has already paid</p>
               </div>
               
@@ -732,7 +753,7 @@ const PrintingPage = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Remaining Debt</label>
                 <div class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-lg font-bold text-red-600" 
                   id="convert-printing-remaining-debt">
-                  KSh ${transaction.amount.toLocaleString()}
+                  KSh ${(existingDebt ? existingDebt.remaining_amount : transaction.amount).toLocaleString()}
                 </div>
               </div>
               
@@ -740,8 +761,9 @@ const PrintingPage = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <div class="relative">
                   <input type="text" id="convert-printing-due-date-display" readonly class="w-full cursor-pointer"
+                    value="${existingDebt ? (existingDebt.due_date || '') : ''}"
                     placeholder="Select due date">
-                  <input type="hidden" id="convert-printing-due-date" value="">
+                  <input type="hidden" id="convert-printing-due-date" value="${existingDebt ? (existingDebt.due_date || '') : ''}">
                   <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -757,7 +779,7 @@ const PrintingPage = {
             <button type="button" class="btn-secondary px-4 py-2 rounded-lg" 
               onclick="PrintingPage.closeConvertDebtModal()">Cancel</button>
             <button type="button" class="btn-primary px-4 py-2 rounded-lg" 
-              onclick="PrintingPage.submitConvertDebt()">Create Debt</button>
+              onclick="PrintingPage.submitConvertDebt()">${existingDebt ? 'Update Debt' : 'Create Debt'}</button>
           </div>
         </div>
       </div>
@@ -962,6 +984,7 @@ const PrintingPage = {
 
   async submitConvertDebt() {
     const transactionId = parseInt(document.getElementById('convert-printing-id').value);
+    const debtId = document.getElementById('convert-printing-debt-id').value;
     const totalAmount = parseFloat(document.getElementById('convert-printing-amount').value);
     const customerName = document.getElementById('convert-printing-customer-name').value.trim();
     const customerPhone = document.getElementById('convert-printing-customer-phone').value.trim();
@@ -983,23 +1006,31 @@ const PrintingPage = {
     const transaction = Store.serviceTransactions.find(t => t.id === transactionId);
     if (!transaction) return;
 
-    // Create debt with paid_amount set to the amount already paid
-    const debt = {
+    // Create or update debt
+    const debtData = {
       customer_name: customerName,
       phone: customerPhone || null,
       amount: totalAmount,
       paid_amount: amountPaid,
       remaining_amount: remainingDebt,
       due_date: dueDate,
-      description: `Printing Job: ${transaction.service_name} (${transaction.stock_metres_used.toFixed(1)}m) - Total: KSh ${totalAmount.toLocaleString()}, Paid: KSh ${amountPaid.toLocaleString()}, Remaining: KSh ${remainingDebt.toLocaleString()}`
+      description: `Printing Job: ${transaction.service_name}`,
+      service_transaction_id: transactionId
     };
 
-    await Store.addDebt(debt);
+    if (debtId) {
+      await Store.updateDebt(parseInt(debtId), debtData);
+      Toast.success('Debt Updated', `Debt for ${customerName} updated successfully`);
+    } else {
+      await Store.addDebt(debtData);
+      Toast.success('Debt Created', `Debt of KSh ${remainingDebt.toLocaleString()} created for ${customerName}`);
+    }
     
-    Toast.success('Debt Created', `Debt of KSh ${remainingDebt.toLocaleString()} created for ${customerName}`);
+    // Mark the transaction as a debt (ensures badge shows)
+    await Store.updateServiceTransaction(transactionId, { is_debt: 1 });
     
     this.closeConvertDebtModal();
-  }
+  },
 };
 
 window.PrintingPage = PrintingPage;

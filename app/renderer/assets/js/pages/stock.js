@@ -33,18 +33,22 @@ const StockPage = {
     const btnAddSizeRow = document.getElementById('btn-add-size-row');
 
     // Open Modal
-    if (btnAdd && modal) {
+    if (btnAdd) {
       btnAdd.addEventListener('click', () => {
-        modal.classList.add('open');
-        // Reset and add initial row
-        this.resetModal();
+        const modalElement = document.getElementById('modal-add-stock');
+        if (modalElement) {
+          modalElement.classList.add('open');
+          // Reset and add initial row
+          this.resetModal();
+        }
       });
     }
 
     // Close Modal Helper
     const closeModal = () => {
-        if (modal) {
-            modal.classList.remove('open');
+        const modalElement = document.getElementById('modal-add-stock');
+        if (modalElement) {
+            modalElement.classList.remove('open');
             this.resetModal();
         }
     };
@@ -54,9 +58,10 @@ const StockPage = {
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
 
     // Close on Click Outside
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
+    const modalElement = document.getElementById('modal-add-stock');
+    if (modalElement) {
+      modalElement.addEventListener('click', (e) => {
+        if (e.target === modalElement) {
             closeModal();
         }
       });
