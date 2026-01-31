@@ -99,8 +99,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "MULTIPRINTS",
-      "uninstallDisplayName": "MULTIPRINTS",
-      "include": "build/installer.nsh"
+      "uninstallDisplayName": "MULTIPRINTS"
     },
     "mac": {
       "target": [
