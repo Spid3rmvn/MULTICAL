@@ -106,6 +106,26 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version for release
+        id: get_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Extract version from tag
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using tag: $VERSION"
+          else
+            # Get version from package.json
+            VERSION=$(cat app/package.json | grep '"version"' | head -1 | sed 's/.*: "\(.*\)".*/\1/' | tr -d ',')
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "Using package.json version: v$VERSION"
+          fi
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -123,6 +143,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.get_version.outputs.version }}
           files: |
             artifacts/**/*/*.exe
             artifacts/**/*/*.deb
