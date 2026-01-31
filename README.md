@@ -49,7 +49,7 @@ Check the [Releases](https://github.com/codegoddy/MULTICAL/releases) page for th
 
 ### Build from Source
 
-**Prerequisites**: Node.js v18+ and npm.
+**Prerequisites**: Node.js v18+ and pnpm.
 
 1.  **Clone the repository**:
     ```bash
@@ -59,17 +59,18 @@ Check the [Releases](https://github.com/codegoddy/MULTICAL/releases) page for th
 
 2.  **Install dependencies**:
     ```bash
-    npm install
+    pnpm install
     ```
 
 3.  **Run in Development Mode**:
     ```bash
-    npm run dev
+    pnpm dev
     ```
 
 4.  **Build Production Installer**:
     ```bash
-    npm run build:linux  # or build:win, build:mac
+    pnpm build:linux  # Ubuntu/Debian .deb package
+    pnpm build:win    # Windows .exe installer
     ```
 
 ## Project Structure
@@ -101,4 +102,4 @@ MULTIPRINTS/
 
 ## License
 
-MIT License - Copyright © 2024 MULTIPRINTS Team
+MIT License - Copyright © 2026 Godwin Mayodi (codegoddy@gmail.com)

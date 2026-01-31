@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_run:
+    workflows: ["Auto Tag on Push"]
+    types:
+      - completed
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -11,7 +17,6 @@ on:
         required: false
         default: ''
 
-# Add workflow-level permissions
 permissions:
   contents: write
 
@@ -23,6 +28,8 @@ jobs:
         include:
           - os: windows-latest
             platform: win
+          - os: ubuntu-latest
+            platform: linux
 
     runs-on: ${{ matrix.os }}
 
@@ -34,24 +41,50 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: app/package-lock.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         working-directory: ./app
-        run: npm ci
+        run: pnpm install --frozen-lockfile
+
+      - name: Build native dependencies
+        working-directory: ./app
+        run: pnpm exec electron-rebuild
 
       - name: Build for ${{ matrix.platform }}
         working-directory: ./app
-        run: npm run build:${{ matrix.platform }}
+        run: pnpm run build:${{ matrix.platform }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List build artifacts
+      - name: List build artifacts (Linux)
         working-directory: ./app
-        run: ls -la dist/ || dir dist/
-        shell: bash
-        continue-on-error: true
+        run: ls -la dist/ || true
+        if: matrix.os == 'ubuntu-latest'
+
+      - name: List build artifacts (Windows)
+        working-directory: ./app
+        run: Get-ChildItem -Path dist/ -ErrorAction SilentlyContinue
+        shell: pwsh
+        if: matrix.os == 'windows-latest'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -59,43 +92,62 @@ jobs:
           name: multiprints-${{ matrix.platform }}
           path: |
             app/dist/*.exe
-            app/dist/*.dmg
-            app/dist/*.zip
-            app/dist/*.AppImage
             app/dist/*.deb
-            app/dist/*.rpm
             app/dist/*.yml
             app/dist/*.yaml
             app/dist/*.blockmap
-          retention-days: 3
+            app/dist/latest*.yml
+          retention-days: 5
           if-no-files-found: warn
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_run'
 
     steps:
-      - name: Download Windows artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: multiprints-win
-          path: artifacts/win
+          path: artifacts
+          pattern: multiprints-*
 
       - name: List all artifacts
-        run: find artifacts -type f -name "*" | head -50
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find artifacts -type f -name "*" | sort
+          echo ""
+          echo "=== File Count ==="
+          find artifacts -type f | wc -l
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/**/*.exe
-            artifacts/**/*.zip
-            artifacts/**/*.yml
-            artifacts/**/*.yaml
-            artifacts/**/*.blockmap
+            artifacts/**/*/*.exe
+            artifacts/**/*/*.deb
+            artifacts/**/*/*.yml
+            artifacts/**/*/*.yaml
+            artifacts/**/*/*.blockmap
           generate_release_notes: true
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: release
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Release Summary
+        run: |
+          echo "🎉 Build and Release Complete!"
+          echo ""
+          echo "📦 New release is available at:"
+          echo "   https://github.com/${{ github.repository }}/releases"
+          echo ""
+          echo "🖥️  Platforms built:"
+          echo "   • Windows (.exe installer)"
+          echo "   • Linux Ubuntu/Debian (.deb)"

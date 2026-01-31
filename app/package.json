@@ -4,8 +4,8 @@
   "description": "MULTIPRINTS - Offline Desktop Inventory and Sales Management Application",
   "main": "main/index.js",
   "author": {
-    "name": "MULTIPRINTS Team",
-    "email": "support@multiprints.app"
+    "name": "Godwin Mayodi",
+    "email": "codegoddy@gmail.com"
   },
   "repository": {
     "type": "git",
@@ -16,6 +16,8 @@
     "start": "electron . --no-sandbox",
     "dev": "electron . --dev --no-sandbox",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "rebuild": "electron-rebuild",
+    "postinstall": "electron-rebuild",
     "build": "electron-builder build",
     "build:win": "electron-builder build --win",
     "build:mac": "electron-builder build --mac",
@@ -34,14 +36,14 @@
   "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^39.2.7",
-    "electron-builder": "^25.1.8",
-    "electron-rebuild": "^3.2.9"
+    "electron": "^40.1.0",
+    "electron-builder": "^26.4.0",
+    "@electron/rebuild": "^4.0.1"
   },
   "build": {
     "appId": "com.multiprints.app",
     "productName": "MULTIPRINTS",
-    "copyright": "Copyright © 2024 MULTIPRINTS Team",
+    "copyright": "Copyright © 2026 Godwin Mayodi",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -71,7 +73,7 @@
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"
     ],
-    "npmRebuild": true,
+    "npmRebuild": false,
     "win": {
       "target": [
         {
@@ -97,7 +99,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "MULTIPRINTS",
-      "uninstallDisplayName": "MULTIPRINTS"
+      "uninstallDisplayName": "MULTIPRINTS",
+      "include": "build/installer.nsh"
     },
     "mac": {
       "target": [
@@ -125,19 +128,7 @@
     "linux": {
       "target": [
         {
-          "target": "AppImage",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "deb",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "rpm",
           "arch": [
             "x64"
           ]
@@ -149,9 +140,13 @@
       "synopsis": "Inventory and Sales Management",
       "description": "A modern offline desktop inventory and sales management application for tracking products, stock, sales, and customer debts.",
       "desktop": {
-        "Name": "MULTIPRINTS",
-        "Comment": "Inventory and Sales Management",
-        "Categories": "Office;Finance;Utility"
+        "entry": {
+          "Name": "MULTIPRINTS",
+          "Comment": "Inventory and Sales Management",
+          "Categories": "Office;Finance;Utility",
+          "Type": "Application",
+          "Terminal": "false"
+        }
       }
     },
     "publish": {
@@ -160,6 +155,6 @@
     }
   },
   "dependencies": {
-    "better-sqlite3": "^12.5.0"
+    "better-sqlite3": "^12.6.2"
   }
 }

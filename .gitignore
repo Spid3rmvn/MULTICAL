@@ -58,8 +58,12 @@ dist/
 *.db-journal
 *.sqlite
 *.sqlite3
+*.sqlite-journal
 database/multical.db
 database/backups/*.db
+app/database.sqlite
+app/*.db
+app/*.db-journal
 
 # =========================
 # IDE / Editor
@@ -114,3 +118,8 @@ coverage.xml
 *.bak
 *.tmp
 *.temp
+
+# =========================
+# Development Tools
+# =========================
+app/reset-password.js

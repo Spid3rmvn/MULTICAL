@@ -210,21 +210,28 @@ window.CustomDropdown = CustomDropdown;
  */
 class Dropdown {
   constructor(containerId, options = {}) {
+    this.onChangeCallback = options.onChange;
+    this.isInitializing = true;
+    
     this.customDropdown = new CustomDropdown(containerId, {
       placeholder: options.placeholder || 'Select',
       items: options.items || [],
       showColorSwatch: options.showColorSwatch || false,
       onSelect: (item) => {
-        if (options.onChange) {
-          options.onChange(item.value, item);
+        // Only trigger onChange after initialization is complete
+        if (!this.isInitializing && this.onChangeCallback) {
+          this.onChangeCallback(item.value, item);
         }
       }
     });
 
-    // Set initial selected value if provided
+    // Set initial selected value if provided (without triggering onChange)
     if (options.selected) {
       this.setValue(options.selected);
     }
+    
+    // Mark initialization as complete
+    this.isInitializing = false;
   }
 
   getValue() {

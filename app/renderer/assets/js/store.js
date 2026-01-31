@@ -188,6 +188,15 @@ const Store = {
     
     this.initialized = true;
     console.log('Store initialized successfully');
+    
+    // Notify all subscribers that data is loaded
+    this.notify('products');
+    this.notify('sales');
+    this.notify('debts');
+    this.notify('stock');
+    this.notify('services');
+    this.notify('serviceTransactions');
+    this.notify('printingMaterials');
   },
 
   checkLocalStorageData() {
