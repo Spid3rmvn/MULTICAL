@@ -48,13 +48,12 @@ const SalesPage = {
       
       this.stockDropdown = new CustomDropdown(stockContainer, {
         placeholder: availableStock.length > 0 ? 'Choose sticker' : 'No stock - add stock first',
-        showColorSwatch: true,
+        showColorSwatch: false,
         items: availableStock.map(s => {
           const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
           return {
             value: s.id.toString(),
             label: `${s.color} - ${s.size}m (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
-            color: s.sticker_type === 'colored' ? s.color : null,
             stickerType: s.sticker_type,
             remaining: s.remaining,
             badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`

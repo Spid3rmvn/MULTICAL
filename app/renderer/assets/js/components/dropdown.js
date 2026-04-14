@@ -184,7 +184,7 @@ class CustomDropdown {
     }
   }
 
-  // Color helper (same as StockPage)
+  // Color helper
   getColorHex(colorName) {
     const colors = {
       red: '#ef4444', blue: '#3b82f6', green: '#22c55e', yellow: '#eab308',
