@@ -10,6 +10,7 @@ const StockPage = {
   itemsPerPage: 10,
   colorSuggestionsDebounce: null,
   boundDocumentClickHandler: null, // Store reference to document click handler
+  storeSubscribed: false, // Track if store subscription added
 
   init() {
     this.sizeRowIdCounter = 0;
@@ -18,11 +19,14 @@ const StockPage = {
     this.render();
     this.updateSummary();
     
-    // Subscribe to store changes
-    Store.subscribe('stock', () => {
-      this.render();
-      this.updateSummary();
-    });
+    // Subscribe to store changes only once
+    if (!this.storeSubscribed) {
+      this.storeSubscribed = true;
+      Store.subscribe('stock', () => {
+        this.render();
+        this.updateSummary();
+      });
+    }
   },
 
   bindEvents() {
@@ -35,7 +39,8 @@ const StockPage = {
     const btnAddSizeRow = document.getElementById('btn-add-size-row');
 
     // Open Modal
-    if (btnAdd) {
+    if (btnAdd && !btnAdd.dataset.bound) {
+      btnAdd.dataset.bound = 'true';
       btnAdd.addEventListener('click', () => {
         const modalElement = document.getElementById('modal-add-stock');
         if (modalElement) {
@@ -56,12 +61,19 @@ const StockPage = {
     };
 
     // Close Button Actions
-    if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+    if (btnClose && !btnClose.dataset.bound) {
+      btnClose.dataset.bound = 'true';
+      btnClose.addEventListener('click', closeModal);
+    }
+    if (btnCancel && !btnCancel.dataset.bound) {
+      btnCancel.dataset.bound = 'true';
+      btnCancel.addEventListener('click', closeModal);
+    }
 
     // Close on Click Outside
     const modalElement = document.getElementById('modal-add-stock');
-    if (modalElement) {
+    if (modalElement && !modalElement.dataset.bound) {
+      modalElement.dataset.bound = 'true';
       modalElement.addEventListener('click', (e) => {
         if (e.target === modalElement) {
             closeModal();
@@ -70,7 +82,8 @@ const StockPage = {
     }
 
     // Add Size Row Button
-    if (btnAddSizeRow) {
+    if (btnAddSizeRow && !btnAddSizeRow.dataset.bound) {
+      btnAddSizeRow.dataset.bound = 'true';
       btnAddSizeRow.addEventListener('click', () => {
         this.addSizeRow();
       });
@@ -79,13 +92,17 @@ const StockPage = {
     // Sticker Type Selector Buttons
     const typeButtons = document.querySelectorAll('.sticker-type-btn');
     typeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.selectStickerType(btn.dataset.type);
-      });
+      if (!btn.dataset.bound) {
+        btn.dataset.bound = 'true';
+        btn.addEventListener('click', () => {
+          this.selectStickerType(btn.dataset.type);
+        });
+      }
     });
 
     // Handle Form Submit
-    if (addForm) {
+    if (addForm && !addForm.dataset.bound) {
+      addForm.dataset.bound = 'true';
       addForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSubmit();
@@ -95,7 +112,8 @@ const StockPage = {
 
     // Color Input Autocomplete
     const colorInput = document.getElementById('stock-color-input');
-    if (colorInput) {
+    if (colorInput && !colorInput.dataset.bound) {
+      colorInput.dataset.bound = 'true';
       // Handle input for suggestions
       colorInput.addEventListener('input', (e) => {
         this.handleColorInput(e.target.value);
@@ -303,6 +321,7 @@ const StockPage = {
   },
 
   selectStickerType(type) {
+    const previousType = this.selectedStickerType;
     this.selectedStickerType = type;
     const hiddenInput = document.getElementById('sticker-type-input');
     if (hiddenInput) hiddenInput.value = type;
@@ -310,17 +329,19 @@ const StockPage = {
     // Update UI elements (buttons, labels) without rebuilding rows
     this.updateStickerTypeUIOnly();
     
-    // Only rebuild rows if there's actual data entered (not empty initial row)
+    // Check if there's user-entered data (excluding default values)
     const container = document.getElementById('size-rows-container');
     if (container && container.children.length > 0) {
-      const hasData = Array.from(container.querySelectorAll('.size-input, .rolls-input, .metres-per-roll-input'))
+      // Only consider data as "entered" if size or rolls inputs have values
+      // Don't count metres-per-roll default value of 50
+      const hasUserData = Array.from(container.querySelectorAll('.size-input, .rolls-input'))
         .some(input => input.value && input.value.trim() !== '');
       
-      if (hasData) {
+      if (hasUserData) {
         // User has entered data, rebuild to preserve it
         this.rebuildSizeRows();
       } else {
-        // Empty initial row, just clear and add fresh one with new type
+        // Empty initial row or only default values, clear and add fresh one with new type
         container.innerHTML = '';
         this.sizeRowIdCounter = 0;
         this.addSizeRow();

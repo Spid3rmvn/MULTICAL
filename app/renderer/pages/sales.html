@@ -170,4 +170,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Date Picker Modal for Convert to Debt -->
+    <div id="modal-sales-date-picker" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-container" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Select Due Date</h3>
+                <button class="modal-close-btn" id="btn-close-sales-date-picker">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Calendar Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <button type="button" id="btn-sales-picker-prev-month"
+                        class="p-2 hover:bg-gray-100 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h4 class="text-lg font-semibold text-gray-900" id="sales-picker-month-year">Month Year</h4>
+                    <button type="button" id="btn-sales-picker-next-month"
+                        class="p-2 hover:bg-gray-100 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="calendar-grid" id="sales-picker-calendar-grid">
+                    <!-- Day Headers -->
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+                    <!-- Days will be dynamically generated -->
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                    <button type="button" id="btn-sales-clear-date" class="btn-secondary px-4 py-2">
+                        Clear
+                    </button>
+                    <button type="button" id="btn-sales-today-date" class="btn-primary px-4 py-2">
+                        Today
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
