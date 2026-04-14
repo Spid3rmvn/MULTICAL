@@ -8,6 +8,8 @@ const StockPage = {
   selectedStickerType: 'colored', // Default sticker type
   currentPage: 1,
   itemsPerPage: 10,
+  colorSuggestionsDebounce: null,
+  boundDocumentClickHandler: null, // Store reference to document click handler
 
   init() {
     this.sizeRowIdCounter = 0;
@@ -90,25 +92,213 @@ const StockPage = {
         closeModal();
       });
     }
+
+    // Color Input Autocomplete
+    const colorInput = document.getElementById('stock-color-input');
+    if (colorInput) {
+      // Handle input for suggestions
+      colorInput.addEventListener('input', (e) => {
+        this.handleColorInput(e.target.value);
+      });
+
+      // Handle focus to show suggestions
+      colorInput.addEventListener('focus', () => {
+        this.showColorSuggestions();
+      });
+
+      // Handle keyboard navigation
+      colorInput.addEventListener('keydown', (e) => {
+        this.handleColorKeydown(e);
+      });
+    }
+
+    // Close suggestions when clicking outside
+    // Remove old handler first to prevent duplicates
+    if (this.boundDocumentClickHandler) {
+      document.removeEventListener('click', this.boundDocumentClickHandler);
+    }
+    this.boundDocumentClickHandler = (e) => {
+      const suggestions = document.getElementById('color-suggestions');
+      const colorInputEl = document.getElementById('stock-color-input');
+      if (suggestions && !suggestions.contains(e.target) && e.target !== colorInputEl) {
+        this.hideColorSuggestions();
+      }
+    };
+    document.addEventListener('click', this.boundDocumentClickHandler);
+  },
+
+  // ============================================================
+  // COLOR AUTOCOMPLETE METHODS
+  // ============================================================
+
+  handleColorInput(value) {
+    // Update color preview
+    this.updateColorPreview(value);
+
+    // Debounce suggestions
+    clearTimeout(this.colorSuggestionsDebounce);
+    this.colorSuggestionsDebounce = setTimeout(() => {
+      this.showColorSuggestions(value);
+    }, 150);
+  },
+
+  showColorSuggestions(filter = '') {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (!suggestionsEl) return;
+
+    const suggestions = window.VinylColorUtils 
+      ? VinylColorUtils.getColorSuggestions(filter, this.selectedStickerType)
+      : this.getBasicColorSuggestions(filter);
+
+    if (suggestions.length === 0) {
+      this.hideColorSuggestions();
+      return;
+    }
+
+    suggestionsEl.innerHTML = suggestions.map(s => `
+      <div class="color-suggestion-item px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 transition-colors" data-color="${s.name}">
+        <div class="w-6 h-6 rounded border border-gray-200 shadow-sm flex-shrink-0" 
+             style="background: ${s.hex};"></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-gray-900">${s.name}</div>
+          ${s.category ? `<div class="text-xs text-gray-500">${s.category}</div>` : ''}
+        </div>
+        ${s.oracalCode ? `<div class="text-xs text-gray-400">ORACAL ${s.oracalCode}</div>` : ''}
+      </div>
+    `).join('');
+
+    suggestionsEl.classList.remove('hidden');
+
+    // Add click handlers to suggestions
+    suggestionsEl.querySelectorAll('.color-suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        this.selectColorSuggestion(item.dataset.color);
+      });
+    });
+  },
+
+  hideColorSuggestions() {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (suggestionsEl) {
+      suggestionsEl.classList.add('hidden');
+    }
+  },
+
+  selectColorSuggestion(colorName) {
+    const colorInput = document.getElementById('stock-color-input');
+    if (colorInput) {
+      colorInput.value = colorName;
+      this.updateColorPreview(colorName);
+    }
+    this.hideColorSuggestions();
+  },
+
+  handleColorKeydown(e) {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (!suggestionsEl || suggestionsEl.classList.contains('hidden')) return;
+
+    const items = suggestionsEl.querySelectorAll('.color-suggestion-item');
+    const activeItem = suggestionsEl.querySelector('.color-suggestion-item.active');
+    let activeIndex = activeItem ? Array.from(items).indexOf(activeItem) : -1;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        this.highlightSuggestion(items, activeIndex);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        this.highlightSuggestion(items, activeIndex);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (activeItem) {
+          this.selectColorSuggestion(activeItem.dataset.color);
+        }
+        break;
+      case 'Escape':
+        this.hideColorSuggestions();
+        break;
+    }
+  },
+
+  highlightSuggestion(items, index) {
+    items.forEach((item, i) => {
+      item.classList.toggle('active', i === index);
+      item.classList.toggle('bg-blue-50', i === index);
+    });
+
+    // Scroll into view
+    if (items[index]) {
+      items[index].scrollIntoView({ block: 'nearest' });
+    }
+  },
+
+  updateColorPreview(colorName) {
+    const previewEl = document.getElementById('color-preview');
+    if (!previewEl) return;
+
+    const hex = window.VinylColorUtils 
+      ? VinylColorUtils.parseColor(colorName).hex
+      : this.getColorHex(colorName);
+    
+    previewEl.style.backgroundColor = hex;
+  },
+
+  getBasicColorSuggestions(filter) {
+    // Fallback if VinylColorUtils is not available
+    const colors = [
+      { name: 'Red', hex: '#ef4444', category: 'basic' },
+      { name: 'Blue', hex: '#3b82f6', category: 'basic' },
+      { name: 'Green', hex: '#22c55e', category: 'basic' },
+      { name: 'Yellow', hex: '#eab308', category: 'basic' },
+      { name: 'Orange', hex: '#f97316', category: 'basic' },
+      { name: 'Purple', hex: '#a855f7', category: 'basic' },
+      { name: 'Pink', hex: '#ec4899', category: 'basic' },
+      { name: 'Black', hex: '#1f2937', category: 'basic' },
+      { name: 'White', hex: '#ffffff', category: 'basic' },
+      { name: 'Dark Red', hex: '#991b1b', category: 'variant' },
+      { name: 'Dark Blue', hex: '#1e3a8a', category: 'variant' },
+      { name: 'Dark Green', hex: '#166534', category: 'variant' },
+      { name: 'Light Blue', hex: '#93c5fd', category: 'variant' },
+      { name: 'Light Green', hex: '#86efac', category: 'variant' }
+    ];
+
+    const filterLower = filter.toLowerCase();
+    return colors.filter(c => !filter || c.name.toLowerCase().includes(filterLower));
   },
 
   resetModal() {
+    // Clear size rows container
     const container = document.getElementById('size-rows-container');
     if (container) {
       container.innerHTML = '';
-      this.sizeRowIdCounter = 0;
     }
+    this.sizeRowIdCounter = 0;
+
+    // Clear color input
     const colorInput = document.getElementById('stock-color-input');
     if (colorInput) {
       colorInput.value = '';
     }
-    // Reset sticker type to default
-    this.selectedStickerType = 'colored';
-    this.updateStickerTypeUI();
-    // Add initial row AFTER updating UI so it uses correct type
-    if (container) {
-      this.addSizeRow();
+    
+    // Reset color preview
+    const colorPreview = document.getElementById('color-preview');
+    if (colorPreview) {
+      colorPreview.style.backgroundColor = '#9ca3af';
     }
+    
+    // Hide color suggestions
+    this.hideColorSuggestions();
+    
+    // Reset sticker type to default and update UI only (don't rebuild rows)
+    this.selectedStickerType = 'colored';
+    this.updateStickerTypeUIOnly();
+    
+    // Now add exactly one initial row
+    this.addSizeRow();
     this.updateTotalSummary();
   },
 
@@ -622,8 +812,16 @@ const StockPage = {
     }
   },
 
-  // Try to get a CSS color from common color names
+  // Get CSS color from vinyl color knowledge system
+  // Uses comprehensive industry-standard color mapping for sticker/vinyl printing
   getColorHex(colorName) {
+    // Use the vinyl color utilities if available
+    if (window.VinylColorUtils) {
+      const parsed = VinylColorUtils.parseColor(colorName);
+      return parsed.hex || '#9ca3af';
+    }
+    
+    // Fallback to basic colors if vinyl-colors.js not loaded
     const colors = {
       // Basic colors
       red: '#ef4444',
@@ -639,53 +837,7 @@ const StockPage = {
       silver: '#9ca3af',
       brown: '#92400e',
       grey: '#6b7280',
-      gray: '#6b7280',
-      
-      // Dark variations
-      'dark blue': '#1e3a8a',
-      'darkblue': '#1e3a8a',
-      'dark green': '#166534',
-      'darkgreen': '#166534',
-      'dark red': '#991b1b',
-      'darkred': '#991b1b',
-      'dark purple': '#581c87',
-      'darkpurple': '#581c87',
-      'dark gray': '#374151',
-      'darkgray': '#374151',
-      'dark grey': '#374151',
-      'darkgrey': '#374151',
-      
-      // Light variations
-      'light blue': '#93c5fd',
-      'lightblue': '#93c5fd',
-      'light green': '#86efac',
-      'lightgreen': '#86efac',
-      'light pink': '#fbcfe8',
-      'lightpink': '#fbcfe8',
-      'light gray': '#d1d5db',
-      'lightgray': '#d1d5db',
-      'light grey': '#d1d5db',
-      'lightgrey': '#d1d5db',
-      
-      // Other common variations
-      navy: '#1e3a8a',
-      cyan: '#06b6d4',
-      teal: '#14b8a6',
-      lime: '#84cc16',
-      maroon: '#7f1d1d',
-      olive: '#a3a33a',
-      beige: '#f5f5dc',
-      cream: '#fffdd0',
-      coral: '#ff7f50',
-      magenta: '#ff00ff',
-      violet: '#8b5cf6',
-      indigo: '#6366f1',
-      turquoise: '#40e0d0',
-      lavender: '#e9d5ff',
-      peach: '#ffdab9',
-      mint: '#a7f3d0',
-      rose: '#fb7185',
-      burgundy: '#800020'
+      gray: '#6b7280'
     };
     
     const lowerColor = colorName.toLowerCase().trim();

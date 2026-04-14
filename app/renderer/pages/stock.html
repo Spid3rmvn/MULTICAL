@@ -99,8 +99,16 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1" id="color-label">Sticker
                                 Color</label>
-                            <input type="text" name="color" id="stock-color-input" required class="w-full"
-                                placeholder="e.g. Red Dark, Black Matt, Blue Medium">
+                            <div class="relative">
+                                <input type="text" name="color" id="stock-color-input" required class="w-full"
+                                    placeholder="e.g. Red Dark, Black Matt, Blue Medium" autocomplete="off">
+                                <!-- Color Preview -->
+                                <div id="color-preview" class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded border border-gray-300 shadow-sm" style="background-color: #9ca3af;"></div>
+                                <!-- Color Suggestions Dropdown -->
+                                <div id="color-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                    <!-- Suggestions will be populated dynamically -->
+                                </div>
+                            </div>
                             <p id="color-hint" class="text-xs text-gray-500 mt-1">Enter color with variant (dark, light,
                                 gloss, matt, medium, etc.)
                             </p>
