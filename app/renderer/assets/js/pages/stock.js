@@ -397,22 +397,22 @@ const StockPage = {
     const container = document.getElementById('size-rows-container');
     if (!container) return;
 
-    // Save current values
+    // Save current values - only for rows that have actual data
     const rows = Array.from(container.querySelectorAll('[data-row-id]'));
     const rowData = rows.map(row => {
       return {
-        size: row.querySelector('.size-input')?.value || '',
-        rolls: row.querySelector('.rolls-input')?.value || '',
-        metresPerRoll: row.querySelector('.metres-per-roll-input')?.value || ''
+        size: row.querySelector('.size-input')?.value?.trim() || '',
+        rolls: row.querySelector('.rolls-input')?.value?.trim() || '',
+        metresPerRoll: row.querySelector('.metres-per-roll-input')?.value?.trim() || ''
       };
-    });
+    }).filter(data => data.size || data.rolls); // Only keep rows that have actual data
 
     // Clear and rebuild rows
     container.innerHTML = '';
     this.sizeRowIdCounter = 0;
     
     if (rowData.length === 0) {
-      // Add initial empty row if none existed
+      // Add initial empty row if no valid data existed
       this.addSizeRow();
     } else {
       // Rebuild rows with saved data
