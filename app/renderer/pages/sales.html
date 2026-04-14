@@ -1,108 +1,60 @@
 <!-- Sales Page Content -->
-<div id="page-sales" class="page-content animate-fade-in">
+<div id="page-sales" class="page-content">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Sales History</h1>
-            <p class="text-sm text-gray-500 mt-1">Track all sales transactions</p>
+            <h1 class="page-title">Sales</h1>
+            <p class="page-subtitle">Track all transactions</p>
         </div>
-        <div class="flex items-center gap-3">
-            <button id="btn-print-selected-sales" 
-                class="hidden flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-all shadow-sm hover:bg-green-700">
+        <div class="flex items-center gap-2">
+            <button id="btn-print-selected-sales" class="hidden flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
                 </svg>
-                Print Selected (<span id="selected-count">0</span>)
+                Print (<span id="selected-count">0</span>)
             </button>
-            <button id="btn-record-sale"
-                class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm transition-all shadow-sm">
+            <button id="btn-record-sale" class="flex items-center gap-2 btn-primary px-4 py-2 text-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
-                Record New Sale
+                Record Sale
             </button>
         </div>
     </div>
 
     <!-- Stats Summary -->
-    <div id="sales-stats-container" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div id="sales-stats-container" class="grid grid-cols-4 gap-4 mb-6">
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Today's Sales</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-today-sales">KSh 0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium mb-1">Today's Sales</p>
+            <h3 class="text-xl font-semibold" id="stat-today-sales">KSh 0</h3>
         </div>
-
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Total Transactions</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-total-transactions">0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium mb-1">Transactions</p>
+            <h3 class="text-xl font-semibold" id="stat-total-transactions">0</h3>
         </div>
-
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Product Sales</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-product-sales">0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium mb-1">Product Sales</p>
+            <h3 class="text-xl font-semibold" id="stat-product-sales">0</h3>
         </div>
-
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">All Time Revenue</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-total-sales">KSh 0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium mb-1">All Time Revenue</p>
+            <h3 class="text-xl font-semibold" id="stat-total-sales">KSh 0</h3>
         </div>
     </div>
 
-    <!-- Recent Sales -->
+    <!-- Sales Table -->
     <div class="dashboard-panel overflow-hidden">
-        <div class="p-5 border-b border-gray-100">
-            <h2 class="dashboard-panel-title">Today's Transactions</h2>
+        <div class="p-4 border-b border-gray-100">
+            <h2 class="text-sm font-semibold">Today's Transactions</h2>
         </div>
         <table class="w-full data-table">
             <thead>
                 <tr>
                     <th class="w-10">
-                        <input type="checkbox" id="select-all-sales" class="w-4 h-4 rounded border-gray-300 cursor-pointer">
+                        <input type="checkbox" id="select-all-sales" class="w-4 h-4">
                     </th>
                     <th>Time</th>
                     <th>Item</th>
-                    <th>Qty/Metres</th>
+                    <th>Qty</th>
                     <th>Amount</th>
                     <th>Payment</th>
                     <th>Customer</th>
@@ -111,249 +63,110 @@
             </thead>
             <tbody id="sales-table-body">
                 <tr>
-                    <td colspan="7" class="px-5 py-8 text-center text-gray-500">No sales recorded today.</td>
+                    <td colspan="8" class="px-5 py-10 text-center text-gray-400">No sales recorded today</td>
                 </tr>
             </tbody>
         </table>
-        <!-- Pagination Controls -->
         <div id="sales-pagination"></div>
     </div>
 
     <!-- Record Sale Modal -->
     <div id="modal-record-sale" class="modal-overlay">
-        <div class="modal-container" style="max-width: 800px;"> <!-- Wider modal for sales -->
+        <div class="modal-container" style="max-width: 760px;">
             <div class="modal-header">
                 <h3 class="modal-title">Record New Sale</h3>
                 <button class="modal-close-btn" id="btn-close-sale-modal">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
 
             <div class="modal-body">
                 <!-- Sale Type Tabs -->
-                <div class="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit mx-auto">
-                    <button id="tab-stock-sale"
-                        class="px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all">
-                        Sticker Sale (Stock)
+                <div class="flex gap-1 mb-5 p-1 bg-gray-100 w-fit mx-auto">
+                    <button id="tab-stock-sale" class="px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm">
+                        Stock Sale
                     </button>
-                    <button id="tab-product-sale"
-                        class="px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all">
-                        Product Sale
-                    </button>
-                    <button id="tab-service-sale"
-                        class="px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all">
-                        Service Sale
+                    <button id="tab-printing-sale" class="px-4 py-2 text-gray-500 font-medium text-sm">
+                        Printing Service
                     </button>
                 </div>
 
                 <!-- Stock Sale Form -->
-                <div id="stock-sale-section">
-                    <form id="stock-sale-form" class="space-y-4">
+                <form id="stock-sale-form">
+                    <div class="space-y-4">
+                        <div>
+                            <label>Stock Item</label>
+                            <div id="stock-selector" class="mt-1"></div>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Sticker Color</label>
-                                <div id="stock-color-dropdown"></div>
-                                <input type="hidden" name="stock_id" id="sale-stock-id-input">
-                                <p id="stock-remaining-info" class="text-xs text-gray-500 mt-1"></p>
+                                <label>Metres</label>
+                                <input type="number" id="sale-metres" step="0.1" min="0.1" class="w-full mt-1" placeholder="0">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Sale Type</label>
-                                <div id="sale-type-dropdown"></div>
-                                <input type="hidden" name="sale_unit" id="sale-unit-input" value="metres">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    <span id="quantity-label">Metres Sold</span>
-                                </label>
-                                <input type="number" name="stock_quantity" id="sale-stock-quantity" min="1" value="1"
-                                    step="0.1" class="w-full">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    <span id="metres-deducted-label">Metres to Deduct</span>
-                                </label>
-                                <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-lg font-bold text-gray-900"
-                                    id="metres-to-deduct">0m</div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Selling Price
-                                    (KSh)</label>
-                                <input type="number" name="total_price" id="stock-total-price" min="0" step="0.01"
-                                    value="0" class="w-full" placeholder="Enter total selling price">
-                                <p class="text-xs text-gray-500 mt-1">Total amount for this sale</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                                <div id="payment-method-dropdown"></div>
-                                <input type="hidden" name="payment_method" id="payment-method-input" value="cash">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
-                                <input type="text" name="customer_name" class="w-full" placeholder="Walk-in customer">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
-                                <div class="px-3 py-2 bg-black text-white rounded-lg text-lg font-bold"
-                                    id="stock-sale-total">KSh 0.00</div>
+                                <label>Price per Metre (KSh)</label>
+                                <input type="number" id="sale-price" step="1" min="1" class="w-full mt-1" placeholder="0">
                             </div>
                         </div>
-                        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                            <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
-                                id="btn-cancel-sale-1">Cancel</button>
-                            <button type="submit" class="btn-primary px-4 py-2 rounded-lg hover:bg-gray-800">Complete
-                                Sale</button>
+                        <div>
+                            <label>Payment Method</label>
+                            <div id="payment-method-selector" class="mt-1"></div>
                         </div>
-                    </form>
-                </div>
+                        <div>
+                            <label>Customer Name (Optional)</label>
+                            <input type="text" id="sale-customer" class="w-full mt-1" placeholder="Walk-in customer">
+                        </div>
+                    </div>
+                </form>
 
-                <!-- Product Sale Form (Hidden by default) -->
-                <div id="product-sale-section" class="hidden">
-                    <form id="sale-form" class="space-y-4">
+                <!-- Printing Sale Form -->
+                <form id="printing-sale-form" class="hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label>Printing Service</label>
+                            <div id="printing-service-selector" class="mt-1"></div>
+                        </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Product</label>
-                                <div id="product-dropdown"></div>
-                                <input type="hidden" name="product_id" id="sale-product-id-input">
-                                <p id="product-sale-info" class="text-xs text-gray-500 mt-1"></p>
+                                <label>Width (inches)</label>
+                                <input type="number" id="printing-width" step="1" min="1" class="w-full mt-1" placeholder="24">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                                <input type="number" name="quantity" id="sale-quantity" min="1" value="1"
-                                    class="w-full">
-                                <p id="quantity-hint" class="text-xs text-gray-500 mt-1"></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Selling Price
-                                    (KSh)</label>
-                                <input type="number" name="total_price" id="sale-total-price" min="0" step="0.01"
-                                    value="0" class="w-full" placeholder="Enter total selling price">
-                                <p class="text-xs text-gray-500 mt-1">Total amount for this sale</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                                <div id="product-payment-dropdown"></div>
-                                <input type="hidden" name="payment_method" id="product-payment-input" value="cash">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
-                                <input type="text" name="customer_name" class="w-full" placeholder="Walk-in customer">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
-                                <div class="px-3 py-2 bg-black text-white rounded-lg text-lg font-bold" id="sale-total">
-                                    KSh 0.00</div>
+                                <label>Height (inches)</label>
+                                <input type="number" id="printing-height" step="1" min="1" class="w-full mt-1" placeholder="18">
                             </div>
                         </div>
-                        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                            <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
-                                id="btn-cancel-sale-2">Cancel</button>
-                            <button type="submit" class="btn-primary px-4 py-2 rounded-lg hover:bg-gray-800">Complete
-                                Sale</button>
+                        <div>
+                            <label>Material Type</label>
+                            <div id="material-type-selector" class="mt-1"></div>
                         </div>
-                    </form>
-                </div>
-
-                <!-- Service Sale Form (Hidden by default) -->
-                <div id="service-sale-section" class="hidden">
-                    <form id="service-sale-form" class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Service Name *</label>
-                                <input type="text" name="service_name" id="service-name-input" class="w-full"
-                                    placeholder="Enter service name" required>
-                                <p class="text-xs text-gray-500 mt-1">Define the service provided</p>
+                                <label>Quantity</label>
+                                <input type="number" id="printing-qty" min="1" value="1" class="w-full mt-1">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Price (KSh) *</label>
-                                <input type="number" name="price" id="service-price" min="0" step="0.01" value="0"
-                                    class="w-full" placeholder="Enter price" required>
-                                <p class="text-xs text-gray-500 mt-1">Total price for this service</p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                                <div id="service-payment-dropdown"></div>
-                                <input type="hidden" name="payment_method" id="service-payment-input" value="cash">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
-                                <input type="text" name="customer_name" class="w-full" placeholder="Walk-in customer">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Service Description</label>
-                                <textarea name="description" id="service-description" class="w-full" rows="2"
-                                    placeholder="Additional service details (optional)"></textarea>
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
-                                <div class="px-3 py-2 bg-black text-white rounded-lg text-lg font-bold"
-                                    id="service-sale-total">KSh 0.00</div>
+                                <label>Total Amount (KSh)</label>
+                                <input type="number" id="printing-total" step="1" min="1" class="w-full mt-1" placeholder="0">
                             </div>
                         </div>
-                        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                            <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
-                                id="btn-cancel-sale-3">Cancel</button>
-                            <button type="submit" class="btn-primary px-4 py-2 rounded-lg hover:bg-gray-800">Complete
-                                Sale</button>
+                        <div>
+                            <label>Payment Method</label>
+                            <div id="printing-payment-selector" class="mt-1"></div>
                         </div>
-                    </form>
-                </div>
+                        <div>
+                            <label>Customer Name (Optional)</label>
+                            <input type="text" id="printing-customer" class="w-full mt-1" placeholder="Walk-in customer">
+                        </div>
+                    </div>
+                </form>
             </div>
-        </div>
-    </div>
 
-    <!-- Date Picker Modal for Convert to Debt -->
-    <div id="modal-sales-date-picker" class="modal-overlay" style="z-index: 9999;">
-        <div class="modal-container" style="max-width: 450px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Select Due Date</h3>
-                <button class="modal-close-btn" id="btn-close-sales-date-picker">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Calendar Header -->
-                <div class="flex items-center justify-between mb-6">
-                    <button id="btn-sales-picker-prev-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
-                            </path>
-                        </svg>
-                    </button>
-                    <h4 class="text-lg font-semibold text-gray-900" id="sales-picker-month-year">January 2024</h4>
-                    <button id="btn-sales-picker-next-month" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
-                            </path>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Calendar Grid -->
-                <div class="calendar-grid" id="sales-picker-calendar-grid">
-                    <!-- Day headers -->
-                    <div class="calendar-day-header">Sun</div>
-                    <div class="calendar-day-header">Mon</div>
-                    <div class="calendar-day-header">Tue</div>
-                    <div class="calendar-day-header">Wed</div>
-                    <div class="calendar-day-header">Thu</div>
-                    <div class="calendar-day-header">Fri</div>
-                    <div class="calendar-day-header">Sat</div>
-                    <!-- Days will be dynamically generated here -->
-                </div>
-
-                <!-- Actions -->
-                <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                    <button type="button" id="btn-sales-clear-date"
-                        class="btn-secondary px-4 py-2 rounded-lg">Clear</button>
-                    <button type="button" id="btn-sales-today-date"
-                        class="btn-primary px-4 py-2 rounded-lg">Today</button>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary px-4 py-2 text-sm" id="btn-cancel-sale">Cancel</button>
+                <button type="button" class="btn-primary px-4 py-2 text-sm" id="btn-submit-sale">Record Sale</button>
             </div>
         </div>
     </div>

@@ -3,11 +3,11 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Printing Services</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage services and track earnings</p>
+            <h1 class="page-title">Printing Services</h1>
+            <p class="page-subtitle">Manage services and track earnings</p>
         </div>
         <button id="btn-add-service"
-            class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm transition-all shadow-sm">
+            class="flex items-center gap-2 bg-brand-500 text-white px-4 py-2 text-sm font-medium hover:bg-brand-600 transition-all">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
@@ -16,58 +16,25 @@
     </div>
 
     <!-- Stats Summary -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Today's Earnings</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-today-earnings">KSh 0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Today's Earnings</p>
+            <p class="text-xl font-bold text-gray-900" id="stat-today-earnings">KSh 0</p>
         </div>
 
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Total Earnings</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-total-earnings">KSh 0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Total Earnings</p>
+            <p class="text-xl font-bold text-gray-900" id="stat-total-earnings">KSh 0</p>
         </div>
 
         <div class="stat-card-modern">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium mb-1">Active Services</p>
-                    <h3 class="text-2xl font-bold text-gray-900" id="stat-active-services">0</h3>
-                </div>
-                <div class="icon-frame">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                </div>
-            </div>
+            <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Active Services</p>
+            <p class="text-xl font-bold text-gray-900" id="stat-active-services">0</p>
         </div>
     </div>
 
     <!-- Two Column Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Services List -->
         <div class="dashboard-panel overflow-hidden">
             <div class="p-5 border-b border-gray-100">
@@ -93,7 +60,7 @@
             <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                 <h2 class="dashboard-panel-title">Today's Transactions</h2>
                 <button id="btn-record-service"
-                    class="flex items-center gap-2 text-sm font-medium text-black hover:text-gray-700 transition-colors">
+                    class="flex items-center gap-2 text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -135,38 +102,38 @@
             <div class="modal-body">
                 <form id="add-service-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Service Name *</label>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Service Name *</label>
                         <input type="text" name="name" required class="w-full" placeholder="e.g., A4 Printing">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Description</label>
                         <textarea name="description" rows="2" class="w-full"
                             placeholder="Optional description"></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Price (KSh) *</label>
+                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Price (KSh) *</label>
                             <input type="number" name="price" required step="0.01" min="0" class="w-full"
                                 placeholder="0.00">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Unit</label>
                             <input type="text" name="unit" class="w-full" placeholder="e.g., per page, per sqm">
                         </div>
                     </div>
                     <div>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="checkbox" name="uses_stock" id="uses-stock-checkbox"
-                                class="w-4 h-4 text-black rounded border-gray-300">
+                                class="w-4 h-4 text-brand-500 border-gray-300">
                             <span class="text-sm font-medium text-gray-700">This service uses stock material</span>
                         </label>
                         <p class="text-xs text-gray-500 mt-1">Check this if the service requires printing on sticker
                             material from stock</p>
                     </div>
                     <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                        <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
+                        <button type="button" class="btn-secondary px-4 py-2"
                             id="btn-cancel-service">Cancel</button>
-                        <button type="submit" class="btn-primary px-4 py-2 rounded-lg">Add Service</button>
+                        <button type="submit" class="btn-primary px-4 py-2">Add Service</button>
                     </div>
                 </form>
             </div>
@@ -188,7 +155,7 @@
             <div class="modal-body">
                 <form id="record-transaction-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Service *</label>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Select Service *</label>
                         <div id="service-dropdown"></div>
                         <input type="hidden" name="service_id" id="service-id-input">
                         <p id="service-price-hint" class="text-xs text-gray-500 mt-1"></p>
@@ -196,18 +163,18 @@
 
                     <!-- Stock Selection (shown only for stock-based services) -->
                     <div id="stock-selection-section" class="hidden">
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                        <div class="bg-blue-50 border border-blue-200 p-3 mb-3">
                             <p class="text-xs text-blue-800 font-medium">This service uses stock material</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Material Color *</label>
+                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Material Color *</label>
                                 <div id="material-color-dropdown"></div>
                                 <input type="hidden" name="stock_id" id="material-stock-id-input">
                                 <p id="material-remaining-info" class="text-xs text-gray-500 mt-1"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Metres to Use *</label>
+                                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Metres to Use *</label>
                                 <input type="number" name="stock_metres_used" id="metres-used-input" min="0.01"
                                     step="0.01" value="1" class="w-full">
                                 <p class="text-xs text-gray-500 mt-1">Material consumed for this job</p>
@@ -217,33 +184,33 @@
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Quantity *</label>
                             <input type="number" name="quantity" id="transaction-quantity" required step="0.01"
                                 min="0.01" value="1" class="w-full">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Payment Method</label>
                             <div id="service-payment-dropdown"></div>
                             <input type="hidden" name="payment_method" id="service-payment-input" value="cash">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Customer Name</label>
                         <input type="text" name="customer_name" class="w-full" placeholder="Walk-in">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Notes</label>
                         <textarea name="notes" rows="2" class="w-full" placeholder="Optional notes"></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
-                        <div class="px-3 py-2 bg-black text-white rounded-lg text-lg font-bold" id="transaction-total">
+                        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Amount</label>
+                        <div class="px-3 py-2 bg-brand-500 text-white text-lg font-bold" id="transaction-total">
                             KSh 0.00</div>
                     </div>
                     <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                        <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
+                        <button type="button" class="btn-secondary px-4 py-2"
                             id="btn-cancel-transaction">Cancel</button>
-                        <button type="submit" class="btn-primary px-4 py-2 rounded-lg">Record Transaction</button>
+                        <button type="submit" class="btn-primary px-4 py-2">Record Transaction</button>
                     </div>
                 </form>
             </div>
