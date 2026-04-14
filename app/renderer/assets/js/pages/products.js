@@ -163,15 +163,11 @@ const ProductsPage = {
       const btnType = btn.dataset.type;
       
       if (btnType === this.selectedProductType) {
-        if (btnType === 'life_saver') {
-          btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-green-500 bg-green-50 text-green-800 font-medium text-sm transition-all hover:bg-green-100';
-        } else if (btnType === 'chevron') {
-          btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-orange-500 bg-orange-50 text-orange-800 font-medium text-sm transition-all hover:bg-orange-100';
-        } else if (btnType === 'stripes') {
-          btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-800 font-medium text-sm transition-all hover:bg-blue-100';
-        }
+        // Active state - blue accent
+        btn.className = 'product-type-btn flex-1 px-4 py-2.5 border border-brand-500 bg-brand-50 text-brand-600 font-medium text-sm transition-all';
       } else {
-        btn.className = 'product-type-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
+        // Inactive state
+        btn.className = 'product-type-btn flex-1 px-4 py-2.5 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all hover:border-gray-300';
       }
     });
   },
@@ -194,21 +190,13 @@ const ProductsPage = {
       if (isHidden) return;
       
       if (btnColor === this.selectedColor) {
-        btn.className = 'product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-900 bg-gray-50 font-medium text-sm transition-all hover:bg-gray-100 flex items-center justify-center gap-2';
-        // Preserve the specific color type class
-        if (btn.dataset.for === 'chevron') {
-          btn.classList.add('chevron-color');
-        } else if (btn.dataset.for === 'stripes') {
-          btn.classList.add('stripe-color');
-        }
+        btn.className = 'product-color-btn flex-1 px-4 py-2.5 border border-gray-900 bg-gray-50 font-medium text-sm transition-all flex items-center justify-center gap-2';
+        if (btn.dataset.for === 'chevron') btn.classList.add('chevron-color');
+        else if (btn.dataset.for === 'stripes') btn.classList.add('stripe-color');
       } else {
-        btn.className = 'product-color-btn flex-1 px-4 py-3 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center gap-2';
-        // Preserve the specific color type class
-        if (btn.dataset.for === 'chevron') {
-          btn.classList.add('chevron-color');
-        } else if (btn.dataset.for === 'stripes') {
-          btn.classList.add('stripe-color');
-        }
+        btn.className = 'product-color-btn flex-1 px-4 py-2.5 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all flex items-center justify-center gap-2';
+        if (btn.dataset.for === 'chevron') btn.classList.add('chevron-color');
+        else if (btn.dataset.for === 'stripes') btn.classList.add('stripe-color');
       }
     });
   },
@@ -227,9 +215,9 @@ const ProductsPage = {
       const btnSize = btn.dataset.size;
       
       if (btnSize === this.selectedSize) {
-        btn.className = 'product-size-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-900 bg-gray-50 font-medium text-sm transition-all hover:bg-gray-100';
+        btn.className = 'product-size-btn flex-1 px-4 py-2 border border-gray-900 bg-gray-50 font-medium text-sm transition-all';
       } else {
-        btn.className = 'product-size-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
+        btn.className = 'product-size-btn flex-1 px-4 py-2 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all hover:border-gray-300';
       }
     });
   },

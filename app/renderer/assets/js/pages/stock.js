@@ -347,35 +347,28 @@ const StockPage = {
     
     const typeConfig = STICKER_TYPES[this.selectedStickerType];
     
-    // Update button states
+    // Update button states - modern minimal style
     typeButtons.forEach(btn => {
       const btnType = btn.dataset.type;
-      const config = STICKER_TYPES[btnType];
       
       if (btnType === this.selectedStickerType) {
-        // Active state based on type
-        if (btnType === 'colored') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium text-sm transition-all hover:bg-purple-100';
-        } else if (btnType === 'clear') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-800 font-medium text-sm transition-all hover:bg-blue-100';
-        } else if (btnType === 'reflective') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-amber-500 bg-amber-50 text-amber-800 font-medium text-sm transition-all hover:bg-amber-100';
-        }
+        // Active state - blue accent
+        btn.className = 'sticker-type-btn flex-1 px-4 py-2 border border-brand-500 bg-brand-50 text-brand-600 font-medium text-sm transition-all';
       } else {
         // Inactive state
-        btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
+        btn.className = 'sticker-type-btn flex-1 px-4 py-2 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all hover:border-gray-300';
       }
     });
 
     // Update color label and hint based on type
     if (this.selectedStickerType === 'colored') {
-      if (colorLabel) colorLabel.textContent = 'Sticker Color';
-      if (colorInput) colorInput.placeholder = 'e.g. Red Dark, Black Matt, Blue Medium';
-      if (colorHint) colorHint.textContent = 'Enter color with variant (dark, light, gloss, matt, medium, etc.)';
+      if (colorLabel) colorLabel.textContent = 'Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red Dark, Black Matte';
+      if (colorHint) colorHint.textContent = 'Enter color with variant (dark, light, matte, gloss)';
     } else if (this.selectedStickerType === 'reflective') {
-      if (colorLabel) colorLabel.textContent = 'Reflective Color';
-      if (colorInput) colorInput.placeholder = 'e.g. Red, White, Yellow, Chevron Yellow Red';
-      if (colorHint) colorHint.textContent = 'Enter color (red, white, yellow, chevron yellow red, chevron white red, etc.)';
+      if (colorLabel) colorLabel.textContent = 'Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red, White, Yellow';
+      if (colorHint) colorHint.textContent = 'Enter reflective color';
     }
   },
 
@@ -434,62 +427,59 @@ const StockPage = {
     const isReflective = this.selectedStickerType === 'reflective';
 
     const row = document.createElement('div');
-    row.className = 'grid grid-cols-2 gap-4';
+    row.className = 'grid grid-cols-2 gap-3';
     row.dataset.rowId = rowId;
     row.innerHTML = `
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Width (inches) ${isFirstRow ? '*' : ''}</label>
+        <label>Width (inches)${isFirstRow ? ' *' : ''}</label>
         <input type="number" 
                class="w-full size-input" 
                data-row-id="${rowId}"
                step="1" 
                min="1" 
-               placeholder="Width in inches" 
+               placeholder="e.g. 24" 
                ${isFirstRow ? 'required' : ''}>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Rolls ${isFirstRow ? '*' : ''}</label>
+        <label>Rolls${isFirstRow ? ' *' : ''}</label>
         <input type="number" 
                class="w-full rolls-input" 
                data-row-id="${rowId}"
                min="1" 
-               placeholder="Number of rolls" 
+               placeholder="e.g. 5" 
                ${isFirstRow ? 'required' : ''}>
       </div>
       ${isReflective ? `
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Metres per Roll ${isFirstRow ? '*' : ''}</label>
+          <label>Metres per Roll${isFirstRow ? ' *' : ''}</label>
           <input type="number" 
                  class="w-full metres-per-roll-input" 
                  data-row-id="${rowId}"
                  step="0.1" 
                  min="1" 
                  value="50"
-                 placeholder="Metres per roll" 
                  ${isFirstRow ? 'required' : ''}>
-          <p class="text-xs text-gray-500 mt-1">Length of each roll</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
-          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          <label>Total Metres</label>
+          <div class="px-3 py-2 bg-gray-50 border border-gray-200 text-gray-600 text-sm">
+            <span class="metres-display font-medium" data-row-id="${rowId}">0</span>m
           </div>
         </div>
       ` : `
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
-          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          <label>Total Metres</label>
+          <div class="px-3 py-2 bg-gray-50 border border-gray-200 text-gray-600 text-sm">
+            <span class="metres-display font-medium" data-row-id="${rowId}">0</span>m
           </div>
-          <p class="text-xs text-gray-500 mt-1">Calculated: rolls × 50m</p>
         </div>
       `}
       ${!isFirstRow ? `
         <div class="col-span-2 flex justify-end">
           <button type="button" 
-                  class="remove-row-btn text-sm text-red-600 hover:text-red-800 font-medium" 
+                  class="remove-row-btn text-xs text-gray-400 hover:text-red-500 font-medium" 
                   data-row-id="${rowId}">
-            Remove this size
+            Remove
           </button>
         </div>
       ` : ''}
