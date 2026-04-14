@@ -245,9 +245,9 @@ const SalesPage = {
     if (tabStock) {
       tabStock.addEventListener('click', (e) => {
         e.preventDefault();
-        tabStock.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabStock.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         stockSection?.classList.remove('hidden');
         productSection?.classList.add('hidden');
         serviceSection?.classList.add('hidden');
@@ -257,9 +257,9 @@ const SalesPage = {
     if (tabProduct) {
       tabProduct.addEventListener('click', (e) => {
         e.preventDefault();
-        tabProduct.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabProduct.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabStock.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         productSection?.classList.remove('hidden');
         stockSection?.classList.add('hidden');
         serviceSection?.classList.add('hidden');
@@ -269,9 +269,9 @@ const SalesPage = {
     if (tabService) {
       tabService.addEventListener('click', (e) => {
         e.preventDefault();
-        tabService.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabStock.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         serviceSection?.classList.remove('hidden');
         stockSection?.classList.add('hidden');
         productSection?.classList.add('hidden');
