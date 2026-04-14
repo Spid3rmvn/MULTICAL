@@ -855,33 +855,33 @@ const StockPage = {
             </button>
           </div>
           <div class="modal-body">
-            <div class="bg-gray-50 p-4 rounded-lg mb-4">
-              <p class="text-sm text-gray-500">Stock Item</p>
+            <div class="bg-gray-50 p-4 mb-4">
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Stock Item</p>
               <p class="font-semibold text-gray-900">${stockItem.color} - ${stockItem.size || '1'}" ${typeConfig.name}</p>
               <p class="text-sm text-gray-600 mt-1">Current: ${remaining.toLocaleString()}m remaining (${rollsLeft} rolls)</p>
             </div>
-            
+
             <form id="add-rolls-form" class="space-y-4">
               <input type="hidden" id="add-rolls-stock-id" value="${id}">
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Number of Rolls to Add *</label>
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Number of Rolls to Add *</label>
                 <input type="number" id="add-rolls-input" min="1" step="1" class="w-full" placeholder="Enter rolls to add" required autofocus>
                 <p class="text-xs text-gray-500 mt-1">Each roll = ${stockItem.metres_per_roll || 50}m</p>
               </div>
-              
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+
+              <div class="bg-blue-50 border border-blue-200 p-3">
                 <p class="text-sm text-gray-700">
-                  <span class="font-medium">New Total:</span> 
-                  <span id="new-total-rolls">${stockItem.rolls}</span> rolls 
+                  <span class="font-medium">New Total:</span>
+                  <span id="new-total-rolls">${stockItem.rolls}</span> rolls
                   (<span id="new-total-metres">${stockItem.total_metres.toLocaleString()}</span>m)
                 </p>
               </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" onclick="StockPage.closeAddRollsModal()">Cancel</button>
-            <button type="button" class="btn-primary px-4 py-2 rounded-lg" onclick="StockPage.submitAddRolls()">Add Rolls</button>
+            <button type="button" class="btn-secondary px-4 py-2" onclick="StockPage.closeAddRollsModal()">Cancel</button>
+            <button type="button" class="btn-primary px-4 py-2" onclick="StockPage.submitAddRolls()">Add Rolls</button>
           </div>
         </div>
       </div>

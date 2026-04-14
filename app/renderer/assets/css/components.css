@@ -509,7 +509,7 @@ label {
 
 .modal-container {
   background: var(--color-bg-elevated);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
