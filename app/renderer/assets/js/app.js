@@ -100,18 +100,19 @@ function canAccessPage(pageName) {
 function setupNavigation() {
   const role = getCurrentUserRole();
   
-  // Hide nav items based on role
-  const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
+  // Hide nav items based on role - support both old and new class names
+  const navItems = document.querySelectorAll('.sidebar-nav-item, .nav-item-monochrome, .nav-item');
   
   navItems.forEach(item => {
     const pageName = item.dataset.page;
     
     // Hide nav items that employee can't access
     if (role === 'employee' && pageName && !canAccessPage(pageName)) {
-      item.closest('li').style.display = 'none';
+      const parentLi = item.closest('li');
+      if (parentLi) parentLi.style.display = 'none';
     } else if (role === 'employee' && pageName === 'settings') {
-      // Ensure settings is visible for employees
-      item.closest('li').style.display = 'block';
+      const parentLi = item.closest('li');
+      if (parentLi) parentLi.style.display = 'block';
     }
     
     item.addEventListener('click', (e) => {
@@ -177,8 +178,8 @@ function navigateToPage(pageName) {
     return;
   }
   
-  // Update active sidebar nav item
-  const navItems = document.querySelectorAll('.nav-item-monochrome, .nav-item');
+  // Update active sidebar nav item - support both old and new class names
+  const navItems = document.querySelectorAll('.sidebar-nav-item, .nav-item-monochrome, .nav-item');
   navItems.forEach(item => {
     item.classList.toggle('active', item.dataset.page === pageName);
   });

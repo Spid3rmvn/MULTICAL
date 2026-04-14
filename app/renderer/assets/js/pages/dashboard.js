@@ -134,13 +134,13 @@ const DashboardPage = {
     const setActiveBtn = (activeBtn) => {
       [btnWeek, btnMonth, btnYear].forEach(btn => {
         if (btn) {
-          btn.classList.remove('bg-black', 'text-white', 'shadow-sm');
-          btn.classList.add('text-gray-600');
+          btn.classList.remove('bg-brand-500', 'text-white');
+          btn.classList.add('text-gray-500', 'hover:bg-gray-50');
         }
       });
       if (activeBtn) {
-        activeBtn.classList.add('bg-black', 'text-white', 'shadow-sm');
-        activeBtn.classList.remove('text-gray-600');
+        activeBtn.classList.add('bg-brand-500', 'text-white');
+        activeBtn.classList.remove('text-gray-500', 'hover:bg-gray-50');
       }
     };
 
