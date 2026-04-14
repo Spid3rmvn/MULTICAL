@@ -1,6 +1,6 @@
 {
   "name": "multiprints",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "MULTIPRINTS - Offline Desktop Inventory and Sales Management Application",
   "main": "main/index.js",
   "author": {
