@@ -1,36 +1,35 @@
 <!-- Stock Management Page -->
-<div id="page-stock" class="page-content animate-fade-in">
+<div id="page-stock" class="page-content">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Stock Management</h1>
-            <p class="text-sm text-gray-500 mt-1">Manage your sticker inventory (1 roll = 50 metres)</p>
+            <h1 class="page-title">Stock</h1>
+            <p class="page-subtitle">Manage your sticker inventory</p>
         </div>
-        <button id="btn-add-stock"
-            class="flex items-center gap-2 btn-primary px-4 py-2 rounded-lg text-sm shadow-sm transition-all">
+        <button id="btn-add-stock" class="flex items-center gap-2 btn-primary px-4 py-2 text-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Add Stock
         </button>
     </div>
 
     <!-- Stock Summary Cards -->
-    <div id="stock-summary" class="grid grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-4 gap-4 mb-6">
         <div class="stat-card-modern">
-            <p class="text-sm text-gray-500 font-medium pb-1">Total Colors</p>
-            <p id="summary-colors" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+            <p class="text-xs text-gray-500 font-medium mb-1">Total Colors</p>
+            <p id="summary-colors" class="text-xl font-semibold">0</p>
         </div>
         <div class="stat-card-modern">
-            <p class="text-sm text-gray-500 font-medium pb-1">Total Rolls</p>
-            <p id="summary-rolls" class="text-2xl font-bold text-gray-900 mt-1">0</p>
+            <p class="text-xs text-gray-500 font-medium mb-1">Total Rolls</p>
+            <p id="summary-rolls" class="text-xl font-semibold">0</p>
         </div>
         <div class="stat-card-modern">
-            <p class="text-sm text-gray-500 font-medium pb-1">Total Metres</p>
-            <p id="summary-metres" class="text-2xl font-bold text-gray-900 mt-1">0m</p>
+            <p class="text-xs text-gray-500 font-medium mb-1">Total Metres</p>
+            <p id="summary-metres" class="text-xl font-semibold">0m</p>
         </div>
         <div class="stat-card-modern">
-            <p class="text-sm text-gray-500 font-medium pb-1">Remaining Metres</p>
-            <p id="summary-remaining" class="text-2xl font-bold text-gray-900 mt-1">0m</p>
+            <p class="text-xs text-gray-500 font-medium mb-1">Remaining</p>
+            <p id="summary-remaining" class="text-xl font-semibold">0m</p>
         </div>
     </div>
 
@@ -41,26 +40,22 @@
                 <tr>
                     <th>Type</th>
                     <th>Color</th>
-                    <th>Width (inches)</th>
-                    <th>Rolls Added</th>
-                    <th>Total Metres</th>
-                    <th>Metres Used</th>
+                    <th>Width</th>
+                    <th>Rolls</th>
+                    <th>Total m</th>
+                    <th>Used</th>
                     <th>Remaining</th>
-                    <th>Rolls Left</th>
+                    <th>Left</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="stock-table-body">
                 <tr>
-                    <td colspan="10" class="px-5 py-8 text-center text-gray-500">No stock added yet. Click "Add Stock"
-                        to
-                        get
-                        started.</td>
+                    <td colspan="10" class="px-5 py-10 text-center text-gray-400">No stock added yet</td>
                 </tr>
             </tbody>
         </table>
-        <!-- Pagination Controls -->
         <div id="stock-pagination"></div>
     </div>
 
@@ -71,76 +66,70 @@
                 <h3 class="modal-title">Add New Stock</h3>
                 <button class="modal-close-btn" id="btn-close-stock-modal">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
-            <form id="add-stock-form">
+            <form id="add-stock-form" action="javascript:void(0);">
                 <div class="modal-body">
-                    <div class="grid grid-cols-1 gap-6">
+                    <div class="space-y-5">
                         <!-- Sticker Type Selection -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Sticker Type</label>
-                            <div id="sticker-type-selector" class="flex gap-2">
+                            <label>Sticker Type</label>
+                            <div id="sticker-type-selector" class="flex gap-2 mt-1">
                                 <button type="button" data-type="colored"
-                                    class="sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium text-sm transition-all hover:bg-purple-100">
+                                    class="sticker-type-btn flex-1 px-4 py-2 border border-brand-500 bg-brand-50 text-brand-600 font-medium text-sm transition-all">
                                     Colored
                                 </button>
                                 <button type="button" data-type="reflective"
-                                    class="sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300">
+                                    class="sticker-type-btn flex-1 px-4 py-2 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all hover:border-gray-300">
                                     Reflective
                                 </button>
                             </div>
                             <input type="hidden" name="sticker_type" id="sticker-type-input" value="colored">
                         </div>
 
-                        <!-- Color Input (once for all sizes) -->
+                        <!-- Color Input -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1" id="color-label">Sticker
-                                Color</label>
-                            <input type="text" name="color" id="stock-color-input" required class="w-full"
-                                placeholder="e.g. Red Dark, Black Matt, Blue Medium">
-                            <p id="color-hint" class="text-xs text-gray-500 mt-1">Enter color with variant (dark, light,
-                                gloss, matt, medium, etc.)
-                            </p>
+                            <label id="color-label">Color</label>
+                            <div class="relative mt-1">
+                                <input type="text" name="color" id="stock-color-input" required class="w-full pr-12"
+                                    placeholder="e.g. Red Dark, Black Matte" autocomplete="off">
+                                <div id="color-preview" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 border border-gray-200" style="background-color: #9ca3af;"></div>
+                                <div id="color-suggestions" class="absolute z-50 w-full mt-1 bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto hidden">
+                                </div>
+                            </div>
+                            <p id="color-hint" class="text-xs text-gray-400 mt-1">Enter color with variant (dark, light, matte, gloss)</p>
                         </div>
 
                         <!-- Size Rows Container -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Size Variants</label>
-                            <div id="size-rows-container" class="space-y-3">
-                                <!-- Size rows will be added here dynamically -->
+                            <label>Size Variants</label>
+                            <div id="size-rows-container" class="space-y-3 mt-2">
                             </div>
-                            <button type="button" id="btn-add-size-row"
-                                class="mt-3 text-sm text-gray-700 hover:text-gray-900 font-medium flex items-center gap-1">
+                            <button type="button" id="btn-add-size-row" class="mt-3 text-sm text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v16m8-8H4"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                 </svg>
-                                Add Another Size
+                                Add size
                             </button>
                         </div>
 
                         <!-- Total Summary -->
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div class="bg-gray-50 border border-gray-100 p-4">
                             <div class="flex justify-between items-center text-sm">
-                                <span class="font-medium text-gray-700">Total:</span>
-                                <div class="flex gap-4">
-                                    <span class="text-gray-600"><span id="total-rolls"
-                                            class="font-semibold text-gray-900">0</span> rolls</span>
-                                    <span class="text-gray-600"><span id="total-metres"
-                                            class="font-semibold text-gray-900">0</span>m</span>
+                                <span class="font-medium text-gray-600">Total</span>
+                                <div class="flex gap-6">
+                                    <span class="text-gray-500"><span id="total-rolls" class="font-semibold text-gray-900">0</span> rolls</span>
+                                    <span class="text-gray-500"><span id="total-metres" class="font-semibold text-gray-900">0</span>m</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-secondary px-4 py-2 rounded-lg"
-                        id="btn-cancel-stock">Cancel</button>
-                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg hover:bg-gray-800">Add to
-                        Stock</button>
+                    <button type="button" class="btn-secondary px-4 py-2 text-sm" id="btn-cancel-stock">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 text-sm">Add Stock</button>
                 </div>
             </form>
         </div>

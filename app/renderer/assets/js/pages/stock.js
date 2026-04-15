@@ -8,6 +8,9 @@ const StockPage = {
   selectedStickerType: 'colored', // Default sticker type
   currentPage: 1,
   itemsPerPage: 10,
+  colorSuggestionsDebounce: null,
+  boundDocumentClickHandler: null, // Store reference to document click handler
+  storeSubscribed: false, // Track if store subscription added
 
   init() {
     this.sizeRowIdCounter = 0;
@@ -16,11 +19,14 @@ const StockPage = {
     this.render();
     this.updateSummary();
     
-    // Subscribe to store changes
-    Store.subscribe('stock', () => {
-      this.render();
-      this.updateSummary();
-    });
+    // Subscribe to store changes only once
+    if (!this.storeSubscribed) {
+      this.storeSubscribed = true;
+      Store.subscribe('stock', () => {
+        this.render();
+        this.updateSummary();
+      });
+    }
   },
 
   bindEvents() {
@@ -33,7 +39,8 @@ const StockPage = {
     const btnAddSizeRow = document.getElementById('btn-add-size-row');
 
     // Open Modal
-    if (btnAdd) {
+    if (btnAdd && !btnAdd.dataset.bound) {
+      btnAdd.dataset.bound = 'true';
       btnAdd.addEventListener('click', () => {
         const modalElement = document.getElementById('modal-add-stock');
         if (modalElement) {
@@ -54,12 +61,19 @@ const StockPage = {
     };
 
     // Close Button Actions
-    if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+    if (btnClose && !btnClose.dataset.bound) {
+      btnClose.dataset.bound = 'true';
+      btnClose.addEventListener('click', closeModal);
+    }
+    if (btnCancel && !btnCancel.dataset.bound) {
+      btnCancel.dataset.bound = 'true';
+      btnCancel.addEventListener('click', closeModal);
+    }
 
     // Close on Click Outside
     const modalElement = document.getElementById('modal-add-stock');
-    if (modalElement) {
+    if (modalElement && !modalElement.dataset.bound) {
+      modalElement.dataset.bound = 'true';
       modalElement.addEventListener('click', (e) => {
         if (e.target === modalElement) {
             closeModal();
@@ -68,7 +82,8 @@ const StockPage = {
     }
 
     // Add Size Row Button
-    if (btnAddSizeRow) {
+    if (btnAddSizeRow && !btnAddSizeRow.dataset.bound) {
+      btnAddSizeRow.dataset.bound = 'true';
       btnAddSizeRow.addEventListener('click', () => {
         this.addSizeRow();
       });
@@ -77,42 +92,236 @@ const StockPage = {
     // Sticker Type Selector Buttons
     const typeButtons = document.querySelectorAll('.sticker-type-btn');
     typeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.selectStickerType(btn.dataset.type);
-      });
+      if (!btn.dataset.bound) {
+        btn.dataset.bound = 'true';
+        btn.addEventListener('click', () => {
+          this.selectStickerType(btn.dataset.type);
+        });
+      }
     });
 
     // Handle Form Submit
-    if (addForm) {
+    if (addForm && !addForm.dataset.bound) {
+      addForm.dataset.bound = 'true';
       addForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSubmit();
         closeModal();
       });
     }
+
+    // Color Input Autocomplete
+    const colorInput = document.getElementById('stock-color-input');
+    if (colorInput && !colorInput.dataset.bound) {
+      colorInput.dataset.bound = 'true';
+      // Handle input for suggestions
+      colorInput.addEventListener('input', (e) => {
+        this.handleColorInput(e.target.value);
+      });
+
+      // Handle focus to show suggestions
+      colorInput.addEventListener('focus', () => {
+        this.showColorSuggestions();
+      });
+
+      // Handle keyboard navigation
+      colorInput.addEventListener('keydown', (e) => {
+        this.handleColorKeydown(e);
+      });
+    }
+
+    // Close suggestions when clicking outside
+    // Remove old handler first to prevent duplicates
+    if (this.boundDocumentClickHandler) {
+      document.removeEventListener('click', this.boundDocumentClickHandler);
+    }
+    this.boundDocumentClickHandler = (e) => {
+      const suggestions = document.getElementById('color-suggestions');
+      const colorInputEl = document.getElementById('stock-color-input');
+      if (suggestions && !suggestions.contains(e.target) && e.target !== colorInputEl) {
+        this.hideColorSuggestions();
+      }
+    };
+    document.addEventListener('click', this.boundDocumentClickHandler);
+  },
+
+  // ============================================================
+  // COLOR AUTOCOMPLETE METHODS
+  // ============================================================
+
+  handleColorInput(value) {
+    // Update color preview
+    this.updateColorPreview(value);
+
+    // Debounce suggestions
+    clearTimeout(this.colorSuggestionsDebounce);
+    this.colorSuggestionsDebounce = setTimeout(() => {
+      this.showColorSuggestions(value);
+    }, 150);
+  },
+
+  showColorSuggestions(filter = '') {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (!suggestionsEl) return;
+
+    const suggestions = window.VinylColorUtils 
+      ? VinylColorUtils.getColorSuggestions(filter, this.selectedStickerType)
+      : this.getBasicColorSuggestions(filter);
+
+    if (suggestions.length === 0) {
+      this.hideColorSuggestions();
+      return;
+    }
+
+    suggestionsEl.innerHTML = suggestions.map(s => `
+      <div class="color-suggestion-item px-3 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-3 transition-colors" data-color="${s.name}">
+        <div class="w-6 h-6 rounded border border-gray-200 shadow-sm flex-shrink-0" 
+             style="background: ${s.hex};"></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-gray-900">${s.name}</div>
+          ${s.category ? `<div class="text-xs text-gray-500">${s.category}</div>` : ''}
+        </div>
+        ${s.oracalCode ? `<div class="text-xs text-gray-400">ORACAL ${s.oracalCode}</div>` : ''}
+      </div>
+    `).join('');
+
+    suggestionsEl.classList.remove('hidden');
+
+    // Add click handlers to suggestions
+    suggestionsEl.querySelectorAll('.color-suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        this.selectColorSuggestion(item.dataset.color);
+      });
+    });
+  },
+
+  hideColorSuggestions() {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (suggestionsEl) {
+      suggestionsEl.classList.add('hidden');
+    }
+  },
+
+  selectColorSuggestion(colorName) {
+    const colorInput = document.getElementById('stock-color-input');
+    if (colorInput) {
+      colorInput.value = colorName;
+      this.updateColorPreview(colorName);
+    }
+    this.hideColorSuggestions();
+  },
+
+  handleColorKeydown(e) {
+    const suggestionsEl = document.getElementById('color-suggestions');
+    if (!suggestionsEl || suggestionsEl.classList.contains('hidden')) return;
+
+    const items = suggestionsEl.querySelectorAll('.color-suggestion-item');
+    const activeItem = suggestionsEl.querySelector('.color-suggestion-item.active');
+    let activeIndex = activeItem ? Array.from(items).indexOf(activeItem) : -1;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        this.highlightSuggestion(items, activeIndex);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        this.highlightSuggestion(items, activeIndex);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (activeItem) {
+          this.selectColorSuggestion(activeItem.dataset.color);
+        }
+        break;
+      case 'Escape':
+        this.hideColorSuggestions();
+        break;
+    }
+  },
+
+  highlightSuggestion(items, index) {
+    items.forEach((item, i) => {
+      item.classList.toggle('active', i === index);
+      item.classList.toggle('bg-blue-50', i === index);
+    });
+
+    // Scroll into view
+    if (items[index]) {
+      items[index].scrollIntoView({ block: 'nearest' });
+    }
+  },
+
+  updateColorPreview(colorName) {
+    const previewEl = document.getElementById('color-preview');
+    if (!previewEl) return;
+
+    const hex = window.VinylColorUtils 
+      ? VinylColorUtils.parseColor(colorName).hex
+      : this.getColorHex(colorName);
+    
+    previewEl.style.backgroundColor = hex;
+  },
+
+  getBasicColorSuggestions(filter) {
+    // Fallback if VinylColorUtils is not available
+    const colors = [
+      { name: 'Red', hex: '#ef4444', category: 'basic' },
+      { name: 'Blue', hex: '#3b82f6', category: 'basic' },
+      { name: 'Green', hex: '#22c55e', category: 'basic' },
+      { name: 'Yellow', hex: '#eab308', category: 'basic' },
+      { name: 'Orange', hex: '#f97316', category: 'basic' },
+      { name: 'Purple', hex: '#a855f7', category: 'basic' },
+      { name: 'Pink', hex: '#ec4899', category: 'basic' },
+      { name: 'Black', hex: '#1f2937', category: 'basic' },
+      { name: 'White', hex: '#ffffff', category: 'basic' },
+      { name: 'Dark Red', hex: '#991b1b', category: 'variant' },
+      { name: 'Dark Blue', hex: '#1e3a8a', category: 'variant' },
+      { name: 'Dark Green', hex: '#166534', category: 'variant' },
+      { name: 'Light Blue', hex: '#93c5fd', category: 'variant' },
+      { name: 'Light Green', hex: '#86efac', category: 'variant' }
+    ];
+
+    const filterLower = filter.toLowerCase();
+    return colors.filter(c => !filter || c.name.toLowerCase().includes(filterLower));
   },
 
   resetModal() {
+    // Clear size rows container
     const container = document.getElementById('size-rows-container');
     if (container) {
       container.innerHTML = '';
-      this.sizeRowIdCounter = 0;
     }
+    this.sizeRowIdCounter = 0;
+
+    // Clear color input
     const colorInput = document.getElementById('stock-color-input');
     if (colorInput) {
       colorInput.value = '';
     }
-    // Reset sticker type to default
-    this.selectedStickerType = 'colored';
-    this.updateStickerTypeUI();
-    // Add initial row AFTER updating UI so it uses correct type
-    if (container) {
-      this.addSizeRow();
+    
+    // Reset color preview
+    const colorPreview = document.getElementById('color-preview');
+    if (colorPreview) {
+      colorPreview.style.backgroundColor = '#9ca3af';
     }
+    
+    // Hide color suggestions
+    this.hideColorSuggestions();
+    
+    // Reset sticker type to default and update UI only (don't rebuild rows)
+    this.selectedStickerType = 'colored';
+    this.updateStickerTypeUIOnly();
+    
+    // Now add exactly one initial row
+    this.addSizeRow();
     this.updateTotalSummary();
   },
 
   selectStickerType(type) {
+    const previousType = this.selectedStickerType;
     this.selectedStickerType = type;
     const hiddenInput = document.getElementById('sticker-type-input');
     if (hiddenInput) hiddenInput.value = type;
@@ -120,17 +329,19 @@ const StockPage = {
     // Update UI elements (buttons, labels) without rebuilding rows
     this.updateStickerTypeUIOnly();
     
-    // Only rebuild rows if there's actual data entered (not empty initial row)
+    // Check if there's user-entered data (excluding default values)
     const container = document.getElementById('size-rows-container');
     if (container && container.children.length > 0) {
-      const hasData = Array.from(container.querySelectorAll('.size-input, .rolls-input, .metres-per-roll-input'))
+      // Only consider data as "entered" if size or rolls inputs have values
+      // Don't count metres-per-roll default value of 50
+      const hasUserData = Array.from(container.querySelectorAll('.size-input, .rolls-input'))
         .some(input => input.value && input.value.trim() !== '');
       
-      if (hasData) {
+      if (hasUserData) {
         // User has entered data, rebuild to preserve it
         this.rebuildSizeRows();
       } else {
-        // Empty initial row, just clear and add fresh one with new type
+        // Empty initial row or only default values, clear and add fresh one with new type
         container.innerHTML = '';
         this.sizeRowIdCounter = 0;
         this.addSizeRow();
@@ -157,35 +368,28 @@ const StockPage = {
     
     const typeConfig = STICKER_TYPES[this.selectedStickerType];
     
-    // Update button states
+    // Update button states - modern minimal style
     typeButtons.forEach(btn => {
       const btnType = btn.dataset.type;
-      const config = STICKER_TYPES[btnType];
       
       if (btnType === this.selectedStickerType) {
-        // Active state based on type
-        if (btnType === 'colored') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-purple-500 bg-purple-50 text-purple-800 font-medium text-sm transition-all hover:bg-purple-100';
-        } else if (btnType === 'clear') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-800 font-medium text-sm transition-all hover:bg-blue-100';
-        } else if (btnType === 'reflective') {
-          btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-amber-500 bg-amber-50 text-amber-800 font-medium text-sm transition-all hover:bg-amber-100';
-        }
+        // Active state - blue accent
+        btn.className = 'sticker-type-btn flex-1 px-4 py-2 border border-brand-500 bg-brand-50 text-brand-600 font-medium text-sm transition-all';
       } else {
         // Inactive state
-        btn.className = 'sticker-type-btn flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-600 font-medium text-sm transition-all hover:bg-gray-50 hover:border-gray-300';
+        btn.className = 'sticker-type-btn flex-1 px-4 py-2 border border-gray-200 bg-white text-gray-500 font-medium text-sm transition-all hover:border-gray-300';
       }
     });
 
     // Update color label and hint based on type
     if (this.selectedStickerType === 'colored') {
-      if (colorLabel) colorLabel.textContent = 'Sticker Color';
-      if (colorInput) colorInput.placeholder = 'e.g. Red Dark, Black Matt, Blue Medium';
-      if (colorHint) colorHint.textContent = 'Enter color with variant (dark, light, gloss, matt, medium, etc.)';
+      if (colorLabel) colorLabel.textContent = 'Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red Dark, Black Matte';
+      if (colorHint) colorHint.textContent = 'Enter color with variant (dark, light, matte, gloss)';
     } else if (this.selectedStickerType === 'reflective') {
-      if (colorLabel) colorLabel.textContent = 'Reflective Color';
-      if (colorInput) colorInput.placeholder = 'e.g. Red, White, Yellow, Chevron Yellow Red';
-      if (colorHint) colorHint.textContent = 'Enter color (red, white, yellow, chevron yellow red, chevron white red, etc.)';
+      if (colorLabel) colorLabel.textContent = 'Color';
+      if (colorInput) colorInput.placeholder = 'e.g. Red, White, Yellow';
+      if (colorHint) colorHint.textContent = 'Enter reflective color';
     }
   },
 
@@ -193,22 +397,22 @@ const StockPage = {
     const container = document.getElementById('size-rows-container');
     if (!container) return;
 
-    // Save current values
+    // Save current values - only for rows that have actual data
     const rows = Array.from(container.querySelectorAll('[data-row-id]'));
     const rowData = rows.map(row => {
       return {
-        size: row.querySelector('.size-input')?.value || '',
-        rolls: row.querySelector('.rolls-input')?.value || '',
-        metresPerRoll: row.querySelector('.metres-per-roll-input')?.value || ''
+        size: row.querySelector('.size-input')?.value?.trim() || '',
+        rolls: row.querySelector('.rolls-input')?.value?.trim() || '',
+        metresPerRoll: row.querySelector('.metres-per-roll-input')?.value?.trim() || ''
       };
-    });
+    }).filter(data => data.size || data.rolls); // Only keep rows that have actual data
 
     // Clear and rebuild rows
     container.innerHTML = '';
     this.sizeRowIdCounter = 0;
     
     if (rowData.length === 0) {
-      // Add initial empty row if none existed
+      // Add initial empty row if no valid data existed
       this.addSizeRow();
     } else {
       // Rebuild rows with saved data
@@ -244,62 +448,59 @@ const StockPage = {
     const isReflective = this.selectedStickerType === 'reflective';
 
     const row = document.createElement('div');
-    row.className = 'grid grid-cols-2 gap-4';
+    row.className = 'grid grid-cols-2 gap-3';
     row.dataset.rowId = rowId;
     row.innerHTML = `
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Width (inches) ${isFirstRow ? '*' : ''}</label>
+        <label>Width (inches)${isFirstRow ? ' *' : ''}</label>
         <input type="number" 
                class="w-full size-input" 
                data-row-id="${rowId}"
                step="1" 
                min="1" 
-               placeholder="Width in inches" 
+               placeholder="e.g. 24" 
                ${isFirstRow ? 'required' : ''}>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Rolls ${isFirstRow ? '*' : ''}</label>
+        <label>Rolls${isFirstRow ? ' *' : ''}</label>
         <input type="number" 
                class="w-full rolls-input" 
                data-row-id="${rowId}"
                min="1" 
-               placeholder="Number of rolls" 
+               placeholder="e.g. 5" 
                ${isFirstRow ? 'required' : ''}>
       </div>
       ${isReflective ? `
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Metres per Roll ${isFirstRow ? '*' : ''}</label>
+          <label>Metres per Roll${isFirstRow ? ' *' : ''}</label>
           <input type="number" 
                  class="w-full metres-per-roll-input" 
                  data-row-id="${rowId}"
                  step="0.1" 
                  min="1" 
                  value="50"
-                 placeholder="Metres per roll" 
                  ${isFirstRow ? 'required' : ''}>
-          <p class="text-xs text-gray-500 mt-1">Length of each roll</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
-          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          <label>Total Metres</label>
+          <div class="px-3 py-2 bg-gray-50 border border-gray-200 text-gray-600 text-sm">
+            <span class="metres-display font-medium" data-row-id="${rowId}">0</span>m
           </div>
         </div>
       ` : `
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Total Metres</label>
-          <div class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
-            <span class="metres-display font-semibold" data-row-id="${rowId}">0</span>m
+          <label>Total Metres</label>
+          <div class="px-3 py-2 bg-gray-50 border border-gray-200 text-gray-600 text-sm">
+            <span class="metres-display font-medium" data-row-id="${rowId}">0</span>m
           </div>
-          <p class="text-xs text-gray-500 mt-1">Calculated: rolls × 50m</p>
         </div>
       `}
       ${!isFirstRow ? `
         <div class="col-span-2 flex justify-end">
           <button type="button" 
-                  class="remove-row-btn text-sm text-red-600 hover:text-red-800 font-medium" 
+                  class="remove-row-btn text-xs text-gray-400 hover:text-red-500 font-medium" 
                   data-row-id="${rowId}">
-            Remove this size
+            Remove
           </button>
         </div>
       ` : ''}
@@ -622,8 +823,16 @@ const StockPage = {
     }
   },
 
-  // Try to get a CSS color from common color names
+  // Get CSS color from vinyl color knowledge system
+  // Uses comprehensive industry-standard color mapping for sticker/vinyl printing
   getColorHex(colorName) {
+    // Use the vinyl color utilities if available
+    if (window.VinylColorUtils) {
+      const parsed = VinylColorUtils.parseColor(colorName);
+      return parsed.hex || '#9ca3af';
+    }
+    
+    // Fallback to basic colors if vinyl-colors.js not loaded
     const colors = {
       // Basic colors
       red: '#ef4444',
@@ -639,53 +848,7 @@ const StockPage = {
       silver: '#9ca3af',
       brown: '#92400e',
       grey: '#6b7280',
-      gray: '#6b7280',
-      
-      // Dark variations
-      'dark blue': '#1e3a8a',
-      'darkblue': '#1e3a8a',
-      'dark green': '#166534',
-      'darkgreen': '#166534',
-      'dark red': '#991b1b',
-      'darkred': '#991b1b',
-      'dark purple': '#581c87',
-      'darkpurple': '#581c87',
-      'dark gray': '#374151',
-      'darkgray': '#374151',
-      'dark grey': '#374151',
-      'darkgrey': '#374151',
-      
-      // Light variations
-      'light blue': '#93c5fd',
-      'lightblue': '#93c5fd',
-      'light green': '#86efac',
-      'lightgreen': '#86efac',
-      'light pink': '#fbcfe8',
-      'lightpink': '#fbcfe8',
-      'light gray': '#d1d5db',
-      'lightgray': '#d1d5db',
-      'light grey': '#d1d5db',
-      'lightgrey': '#d1d5db',
-      
-      // Other common variations
-      navy: '#1e3a8a',
-      cyan: '#06b6d4',
-      teal: '#14b8a6',
-      lime: '#84cc16',
-      maroon: '#7f1d1d',
-      olive: '#a3a33a',
-      beige: '#f5f5dc',
-      cream: '#fffdd0',
-      coral: '#ff7f50',
-      magenta: '#ff00ff',
-      violet: '#8b5cf6',
-      indigo: '#6366f1',
-      turquoise: '#40e0d0',
-      lavender: '#e9d5ff',
-      peach: '#ffdab9',
-      mint: '#a7f3d0',
-      rose: '#fb7185',
-      burgundy: '#800020'
+      gray: '#6b7280'
     };
     
     const lowerColor = colorName.toLowerCase().trim();
@@ -713,33 +876,33 @@ const StockPage = {
             </button>
           </div>
           <div class="modal-body">
-            <div class="bg-gray-50 p-4 rounded-lg mb-4">
-              <p class="text-sm text-gray-500">Stock Item</p>
+            <div class="bg-gray-50 p-4 mb-4">
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Stock Item</p>
               <p class="font-semibold text-gray-900">${stockItem.color} - ${stockItem.size || '1'}" ${typeConfig.name}</p>
               <p class="text-sm text-gray-600 mt-1">Current: ${remaining.toLocaleString()}m remaining (${rollsLeft} rolls)</p>
             </div>
-            
-            <form id="add-rolls-form" class="space-y-4">
+
+            <form id="add-rolls-form" class="space-y-4" action="javascript:void(0);">
               <input type="hidden" id="add-rolls-stock-id" value="${id}">
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Number of Rolls to Add *</label>
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Number of Rolls to Add *</label>
                 <input type="number" id="add-rolls-input" min="1" step="1" class="w-full" placeholder="Enter rolls to add" required autofocus>
                 <p class="text-xs text-gray-500 mt-1">Each roll = ${stockItem.metres_per_roll || 50}m</p>
               </div>
-              
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+
+              <div class="bg-blue-50 border border-blue-200 p-3">
                 <p class="text-sm text-gray-700">
-                  <span class="font-medium">New Total:</span> 
-                  <span id="new-total-rolls">${stockItem.rolls}</span> rolls 
+                  <span class="font-medium">New Total:</span>
+                  <span id="new-total-rolls">${stockItem.rolls}</span> rolls
                   (<span id="new-total-metres">${stockItem.total_metres.toLocaleString()}</span>m)
                 </p>
               </div>
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" onclick="StockPage.closeAddRollsModal()">Cancel</button>
-            <button type="button" class="btn-primary px-4 py-2 rounded-lg" onclick="StockPage.submitAddRolls()">Add Rolls</button>
+            <button type="button" class="btn-secondary px-4 py-2" onclick="StockPage.closeAddRollsModal()">Cancel</button>
+            <button type="submit" form="add-rolls-form" class="btn-primary px-4 py-2">Add Rolls</button>
           </div>
         </div>
       </div>
@@ -749,6 +912,15 @@ const StockPage = {
     const existingModal = document.getElementById('modal-add-rolls');
     if (existingModal) existingModal.remove();
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add form submit handler
+    const form = document.getElementById('add-rolls-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.submitAddRolls();
+      });
+    }
 
     // Add event listener for real-time calculation
     const rollsInput = document.getElementById('add-rolls-input');

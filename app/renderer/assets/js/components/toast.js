@@ -45,8 +45,8 @@ const Toast = {
     const config = this.getTypeConfig(type);
 
     toast.innerHTML = `
-      <div class="flex items-start gap-3 min-w-[320px] max-w-[400px] p-4 bg-white border border-gray-200 rounded-xl shadow-lg">
-        <div class="flex-shrink-0 w-10 h-10 rounded-full ${config.bgColor} flex items-center justify-center">
+      <div class="flex items-start gap-3 min-w-[320px] max-w-[400px] p-4 bg-white border border-gray-200 shadow-lg">
+        <div class="flex-shrink-0 w-10 h-10 ${config.bgColor} flex items-center justify-center">
           ${config.icon}
         </div>
         <div class="flex-1 min-w-0">

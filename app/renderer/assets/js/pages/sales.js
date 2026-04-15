@@ -48,13 +48,12 @@ const SalesPage = {
       
       this.stockDropdown = new CustomDropdown(stockContainer, {
         placeholder: availableStock.length > 0 ? 'Choose sticker' : 'No stock - add stock first',
-        showColorSwatch: true,
+        showColorSwatch: false,
         items: availableStock.map(s => {
           const typeConfig = STICKER_TYPES[s.sticker_type] || STICKER_TYPES.colored;
           return {
             value: s.id.toString(),
             label: `${s.color} - ${s.size}m (${typeConfig.name}) - ${s.remaining.toLocaleString()}m`,
-            color: s.sticker_type === 'colored' ? s.color : null,
             stickerType: s.sticker_type,
             remaining: s.remaining,
             badge: `${Math.floor(s.remaining / this.metresPerRoll)} rolls`
@@ -245,9 +244,9 @@ const SalesPage = {
     if (tabStock) {
       tabStock.addEventListener('click', (e) => {
         e.preventDefault();
-        tabStock.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabStock.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         stockSection?.classList.remove('hidden');
         productSection?.classList.add('hidden');
         serviceSection?.classList.add('hidden');
@@ -257,9 +256,9 @@ const SalesPage = {
     if (tabProduct) {
       tabProduct.addEventListener('click', (e) => {
         e.preventDefault();
-        tabProduct.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabService.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabProduct.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabStock.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         productSection?.classList.remove('hidden');
         stockSection?.classList.add('hidden');
         serviceSection?.classList.add('hidden');
@@ -269,9 +268,9 @@ const SalesPage = {
     if (tabService) {
       tabService.addEventListener('click', (e) => {
         e.preventDefault();
-        tabService.className = 'px-4 py-2 bg-white text-black font-medium rounded-md text-sm shadow-sm transition-all';
-        tabStock.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
-        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium rounded-md text-sm hover:bg-gray-200 transition-all';
+        tabService.className = 'px-4 py-2 bg-white text-gray-900 font-medium text-sm shadow-sm transition-all';
+        tabStock.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
+        tabProduct.className = 'px-4 py-2 text-gray-500 font-medium text-sm hover:bg-gray-200 transition-all';
         serviceSection?.classList.remove('hidden');
         stockSection?.classList.add('hidden');
         productSection?.classList.add('hidden');
@@ -286,7 +285,8 @@ const SalesPage = {
     if (stockQuantity) stockQuantity.addEventListener('input', () => this.calculateStockSaleTotal());
     if (stockTotalPrice) stockTotalPrice.addEventListener('input', () => this.calculateStockSaleTotal());
 
-    if (stockForm) {
+    if (stockForm && !stockForm.dataset.bound) {
+      stockForm.dataset.bound = 'true';
       stockForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(stockForm);
@@ -301,7 +301,8 @@ const SalesPage = {
 
     if (totalPriceInput) totalPriceInput.addEventListener('input', () => this.calculateTotal());
 
-    if (form) {
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSubmit(new FormData(form));
@@ -315,7 +316,8 @@ const SalesPage = {
 
     if (servicePriceInput) servicePriceInput.addEventListener('input', () => this.calculateServiceSaleTotal());
 
-    if (serviceForm) {
+    if (serviceForm && !serviceForm.dataset.bound) {
+      serviceForm.dataset.bound = 'true';
       serviceForm.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleServiceSaleSubmit(new FormData(serviceForm));
@@ -492,7 +494,7 @@ const SalesPage = {
   },
 
   resetProductSaleDisplay() {
-    const totalEl = document.getElementById('sale-total');
+    const totalEl = document.getElementById('product-sale-total');
     const infoEl = document.getElementById('product-sale-info');
     const hintEl = document.getElementById('quantity-hint');
 
@@ -619,7 +621,7 @@ const SalesPage = {
 
   calculateTotal() {
     const totalPriceInput = document.getElementById('sale-total-price');
-    const totalEl = document.getElementById('sale-total');
+    const totalEl = document.getElementById('product-sale-total');
 
     if (!totalPriceInput) return;
     
@@ -771,7 +773,7 @@ const SalesPage = {
         <td class="px-5 py-4 text-sm text-gray-600">${timeDisplay}</td>
         <td class="px-5 py-4">
           <div class="flex items-center gap-2">
-            <span class="status-badge ${sale.type === 'stock' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}">${sale.type === 'stock' ? 'Stock' : 'Product'}</span>
+            <span class="status-badge ${sale.type === 'stock' ? 'bg-gray-800 text-white' : sale.type === 'service' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}">${sale.type === 'stock' ? 'Stock' : sale.type === 'service' ? 'Service' : 'Product'}</span>
             <span class="text-sm font-medium text-gray-900">${sale.product_name}</span>
           </div>
         </td>
@@ -956,53 +958,53 @@ const SalesPage = {
             </button>
           </div>
           <div class="modal-body">
-            <div class="bg-gray-50 p-4 rounded-lg mb-4">
-              <p class="text-sm text-gray-500">Sale Details</p>
+            <div class="bg-gray-50 p-4 mb-4">
+              <p class="text-xs text-gray-500 uppercase tracking-wide">Sale Details</p>
               <p class="font-semibold text-gray-900">${sale.product_name}</p>
               <p class="text-sm text-gray-600">${sale.quantity} - KSh ${sale.amount.toLocaleString()}</p>
             </div>
-            
+
             <form id="convert-debt-form" class="space-y-4">
               <input type="hidden" id="convert-sale-id" value="${saleId}">
               <input type="hidden" id="convert-sale-amount" value="${sale.amount}">
               <input type="hidden" id="convert-debt-id" value="${existingDebt ? existingDebt.id : ''}">
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-                <input type="text" id="convert-customer-name" value="${existingDebt ? existingDebt.customer_name : sale.customer_name}" 
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Customer Name *</label>
+                <input type="text" id="convert-customer-name" value="${existingDebt ? existingDebt.customer_name : sale.customer_name}"
                   class="w-full" placeholder="Enter customer name" required>
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Customer Phone</label>
-                <input type="tel" id="convert-customer-phone" value="${existingDebt ? (existingDebt.phone || '') : ''}" 
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Customer Phone</label>
+                <input type="tel" id="convert-customer-phone" value="${existingDebt ? (existingDebt.phone || '') : ''}"
                   class="w-full" placeholder="Optional">
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Total Sale Amount</label>
-                <div class="px-3 py-2 bg-gray-100 rounded-lg text-lg font-bold text-gray-900">
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Sale Amount</label>
+                <div class="px-3 py-2 bg-gray-100 text-lg font-bold text-gray-900">
                   KSh ${sale.amount.toLocaleString()}
                 </div>
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid *</label>
-                <input type="number" id="convert-amount-paid" min="0" max="${sale.amount}" 
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Amount Paid *</label>
+                <input type="number" id="convert-amount-paid" min="0" max="${sale.amount}"
                   step="0.01" value="${existingDebt ? existingDebt.paid_amount : 0}" class="w-full" placeholder="0.00" required>
                 <p class="text-xs text-gray-500 mt-1">How much the customer has already paid</p>
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Remaining Debt</label>
-                <div class="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-lg font-bold text-red-600" 
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remaining Debt</label>
+                <div class="px-3 py-2 bg-red-50 border border-red-200 text-lg font-bold text-red-600"
                   id="convert-remaining-debt">
                   KSh ${(existingDebt ? existingDebt.remaining_amount : sale.amount).toLocaleString()}
                 </div>
               </div>
-              
+
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Due Date</label>
                 <div class="relative">
                   <input type="text" id="convert-due-date-display" readonly class="w-full cursor-pointer"
                     value="${existingDebt ? (existingDebt.due_date || '') : ''}"
@@ -1020,9 +1022,9 @@ const SalesPage = {
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn-secondary px-4 py-2 rounded-lg" 
+            <button type="button" class="btn-secondary px-4 py-2"
               onclick="SalesPage.closeConvertDebtModal()">Cancel</button>
-            <button type="button" class="btn-primary px-4 py-2 rounded-lg" 
+            <button type="button" class="btn-primary px-4 py-2"
               onclick="SalesPage.submitConvertDebt()">${existingDebt ? 'Update Debt' : 'Create Debt'}</button>
           </div>
         </div>

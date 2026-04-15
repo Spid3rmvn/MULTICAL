@@ -1,3 +1,13 @@
+/* DM Serif Display - For Headings */
+@font-face {
+  font-family: 'DM Serif Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('DM Serif Display'), local('DMSerifDisplay'), 
+       url('../fonts/dm-serif-display-regular.woff2') format('woff2');
+}
+
 /* Inter Font - Local */
 @font-face {
   font-family: 'Inter';

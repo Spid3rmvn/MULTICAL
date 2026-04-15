@@ -383,30 +383,37 @@ const SettingsPage = {
       itemDetails: 'Make sure you have a backup before proceeding',
       onConfirm: async () => {
         try {
-          // Clear all store data
-          Store.products = [];
-          Store.stock = [];
-          Store.sales = [];
-          Store.debts = [];
-          Store.services = [];
-          Store.serviceTransactions = [];
-          Store.printingMaterials = [];
-
-          // Notify all subscriptions
-          Store.notify('products');
-          Store.notify('stock');
-          Store.notify('sales');
-          Store.notify('debts');
-          Store.notify('services');
-          Store.notify('serviceTransactions');
-          Store.notify('printingMaterials');
-
-          Toast.success('Data Cleared', 'All business data has been deleted');
+          // Clear all data from database
+          const result = await window.db.clearAllData();
           
-          // Reload after a moment
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
+          if (result.success) {
+            // Clear in-memory store data
+            Store.products = [];
+            Store.stock = [];
+            Store.sales = [];
+            Store.debts = [];
+            Store.services = [];
+            Store.serviceTransactions = [];
+            Store.printingMaterials = [];
+
+            // Notify all subscriptions
+            Store.notify('products');
+            Store.notify('stock');
+            Store.notify('sales');
+            Store.notify('debts');
+            Store.notify('services');
+            Store.notify('serviceTransactions');
+            Store.notify('printingMaterials');
+
+            Toast.success('Data Cleared', 'All business data has been deleted');
+            
+            // Reload after a moment
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          } else {
+            Toast.error('Clear Failed', result.error || 'Could not clear all data');
+          }
         } catch (error) {
           console.error('Clear data failed:', error);
           Toast.error('Clear Failed', 'Could not clear all data');

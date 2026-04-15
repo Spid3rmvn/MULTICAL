@@ -1,84 +1,11 @@
-const { Menu, shell } = require('electron');
+const { Menu } = require('electron');
 
 /**
  * Create application menu
  * @param {BrowserWindow} mainWindow 
  */
 function createMenu(mainWindow) {
-  const template = [
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'New',
-          accelerator: 'CmdOrCtrl+N',
-          click: () => {
-            mainWindow.webContents.send('menu:new');
-          }
-        },
-        { type: 'separator' },
-        {
-          label: 'Settings',
-          accelerator: 'CmdOrCtrl+,',
-          click: () => {
-            mainWindow.webContents.send('menu:settings');
-          }
-        },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        { role: 'reload' },
-        { role: 'forceReload' },
-        { role: 'toggleDevTools' },
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'close' }
-      ]
-    },
-    {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'Documentation',
-          click: () => {
-            shell.openExternal('https://github.com/your-repo/multiprints');
-          }
-        },
-        {
-          label: 'About',
-          click: () => {
-            mainWindow.webContents.send('menu:about');
-          }
-        }
-      ]
-    }
-  ];
+  const template = [];
 
   // macOS specific menu adjustments
   if (process.platform === 'darwin') {
