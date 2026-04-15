@@ -83,13 +83,12 @@ const DashboardPage = {
   updateStats() {
     const revenueEl = document.getElementById('stat-revenue');
     const salesEl = document.getElementById('stat-sales');
-    const productsEl = document.getElementById('stat-products');
     const debtsEl = document.getElementById('stat-debts');
     const todayRevenueEl = document.getElementById('stat-today-revenue');
     const debtsCountEl = document.getElementById('stat-debts-count');
 
     // Check if elements exist - if not, retry later
-    if (!revenueEl || !salesEl || !productsEl || !debtsEl) {
+    if (!revenueEl || !salesEl || !debtsEl) {
       setTimeout(() => this.updateStats(), 100);
       return;
     }
@@ -107,14 +106,11 @@ const DashboardPage = {
     const todayRevenue = todaySales.reduce((sum, s) => sum + s.amount, 0) +
                          todayServiceTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-    const salesCount = Store.sales?.length || 0;
-    const productsCount = Store.products?.length || 0;
     const outstanding = Store.getTotalOutstanding?.() || 0;
     const pendingDebts = Store.debts?.filter(d => d.status === 'pending').length || 0;
 
     revenueEl.textContent = `KSh ${totalRevenue.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     salesEl.textContent = todaySalesCount;
-    productsEl.textContent = productsCount;
     debtsEl.textContent = `KSh ${outstanding.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
     if (todayRevenueEl) {
