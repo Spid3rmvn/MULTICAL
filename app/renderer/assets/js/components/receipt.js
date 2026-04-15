@@ -4,9 +4,6 @@
  */
 
 const Receipt = {
-  // Store original document title to restore after printing
-  originalTitle: null,
-
   /**
    * Get business settings from localStorage
    */
@@ -294,12 +291,9 @@ const Receipt = {
   },
 
   /**
-   * Handle after print - restore original title
+   * Handle after print
    */
   afterPrint() {
-    if (this.originalTitle) {
-      document.title = this.originalTitle;
-    }
     window.removeEventListener('afterprint', this.afterPrint);
   },
 
@@ -464,10 +458,7 @@ const Receipt = {
    * Set the document title for printing (used as PDF filename)
    */
   setPrintTitle(filename) {
-    this.originalTitle = document.title;
-    document.title = filename;
-
-    // Restore title after printing
+    // Keep title as MULTIPRINTS - don't change it
     window.addEventListener('afterprint', () => this.afterPrint());
   }
 };
