@@ -852,6 +852,28 @@ class DatabaseManager {
     this.db.prepare('DELETE FROM users WHERE username = ?').run(username);
   }
 
+  // ==================== Clear All Data ====================
+
+  clearAllData() {
+    const transaction = this.db.transaction(() => {
+      // Clear all data tables (but keep users)
+      this.db.exec('DELETE FROM debt_payments');
+      this.db.exec('DELETE FROM debts');
+      this.db.exec('DELETE FROM sales');
+      this.db.exec('DELETE FROM service_transactions');
+      this.db.exec('DELETE FROM services');
+      this.db.exec('DELETE FROM printing_materials');
+      this.db.exec('DELETE FROM stock');
+      this.db.exec('DELETE FROM products');
+      
+      // Reset auto-increment counters
+      this.db.exec("DELETE FROM sqlite_sequence WHERE name IN ('debt_payments', 'debts', 'sales', 'service_transactions', 'services', 'printing_materials', 'stock', 'products')");
+    });
+    
+    transaction();
+    console.log('All business data cleared from database');
+  }
+
   // ==================== Migration from localStorage ====================
 
   migrateFromLocalStorage(localStorageData) {

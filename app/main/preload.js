@@ -136,7 +136,10 @@ contextBridge.exposeInMainWorld('db', {
   },
   
   // ==================== Migration ====================
-  migrate: (localStorageData) => ipcRenderer.invoke('db:migrate', localStorageData)
+  migrate: (localStorageData) => ipcRenderer.invoke('db:migrate', localStorageData),
+  
+  // ==================== Clear All Data ====================
+  clearAllData: () => ipcRenderer.invoke('db:clearAll')
 });
 
 // Notify main process that preload is ready

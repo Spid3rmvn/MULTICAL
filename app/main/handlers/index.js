@@ -301,6 +301,18 @@ ipcMain.handle('db:migrate', (event, localStorageData) => {
   }
 });
 
+// ==================== Clear All Data ====================
+
+ipcMain.handle('db:clearAll', () => {
+  try {
+    database.clearAllData();
+    return { success: true };
+  } catch (error) {
+    console.error('Clear all data error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // ==================== Window Controls ====================
 
 ipcMain.on('window:minimize', (event) => {
